@@ -5817,6 +5817,8 @@ with pkgs;
 
   fbvnc = callPackage ../tools/admin/fbvnc {};
 
+  ffxiv = callPackage ../games/ffxiv { };
+
   fim = callPackage ../tools/graphics/fim { };
 
   flac123 = callPackage ../applications/audio/flac123 { };
