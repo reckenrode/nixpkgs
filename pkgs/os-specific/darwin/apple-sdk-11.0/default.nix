@@ -1,4 +1,4 @@
-{ stdenvNoCC, fetchurl, newScope, pkgs
+{ stdenvNoCC, fetchurl, newScope, lib, pkgs
 , stdenv, overrideCC
 , xar, cpio, python3, pbzx }:
 
@@ -55,6 +55,16 @@ let
     # questionable aliases
     configd = pkgs.darwin.apple_sdk.frameworks.SystemConfiguration;
     IOKit = pkgs.darwin.apple_sdk.frameworks.IOKit;
+
+    callPackage = newScope (lib.optionalAttrs stdenv.isDarwin rec {
+      inherit (pkgs.darwin.apple_sdk_11_0) stdenv;
+      darwin = pkgs.darwin.overrideScope (_: prev: { apple_sdk = prev.darwin.apple_sdk_11_0; });
+      xcodebuild = pkgs.xcbuild.override {
+        inherit (pkgs.darwin.apple_sdk_11_0.frameworks) CoreServices CoreGraphics ImageIO;
+        inherit stdenv;
+      };
+      xcbuild = xcodebuild;
+    });
 
     stdenv =
       let
