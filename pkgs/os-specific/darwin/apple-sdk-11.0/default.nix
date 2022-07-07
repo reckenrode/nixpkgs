@@ -58,7 +58,11 @@ let
 
     callPackage = newScope (lib.optionalAttrs stdenv.isDarwin rec {
       inherit (pkgs.darwin.apple_sdk_11_0) stdenv;
-      darwin = pkgs.darwin.overrideScope (_: prev: { apple_sdk = prev.darwin.apple_sdk_11_0; });
+      darwin = pkgs.darwin.overrideScope (_: prev: {
+        inherit (prev.darwin.apple_sdk_11_0) Libsystem LibsystemCross libcharset libunwind objc4 configd IOKit Security;
+        apple_sdk = prev.darwin.apple_sdk_11_0;
+        CF = prev.darwin.apple_sdk_11_0.CoreFoundation;
+      });
       xcodebuild = pkgs.xcbuild.override {
         inherit (pkgs.darwin.apple_sdk_11_0.frameworks) CoreServices CoreGraphics ImageIO;
         inherit stdenv;
