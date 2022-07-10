@@ -35,7 +35,8 @@ stdenv.mkDerivation {
     ./macos-copy-app-to-prefix.patch
   ];
 
-  nativeBuildInputs = [ pkg-config wrapGAppsHook ]
+  nativeBuildInputs = [ pkg-config ]
+    ++ lib.optionals stdenv.isLinux [ wrapGAppsHook ]
     ++ lib.optionals stdenv.isDarwin [ libicns ];
 
   buildInputs = [ SDL2 libao ]
@@ -44,7 +45,9 @@ stdenv.mkDerivation {
 
   enableParallelBuilding = true;
 
-  makeFlags = [ "-C" "bsnes" "hiro=gtk3" "prefix=$(out)" ];
+  makeFlags = [ "-C" "bsnes" "prefix=$(out)" ]
+    ++ lib.optionals stdenv.isLinux [ "hiro=gtk3" ]
+    ++ lib.optionals stdenv.isDarwin [ "hiro=cocoa" ];
 
   # https://github.com/bsnes-emu/bsnes/issues/107
   preFixup = ''
@@ -59,9 +62,6 @@ stdenv.mkDerivation {
     license = licenses.gpl3Only;
     maintainers = with maintainers; [ stevebob ];
     platforms = platforms.unix;
-    # ../nall/traits.hpp:19:14: error: no member named 'is_floating_point_v' in namespace 'std'; did you mean 'is_floating_point'?
-    #   using std::is_floating_point_v;
-    broken = (stdenv.isDarwin && stdenv.isx86_64);
     mainProgram = "bsnes";
   };
 }
