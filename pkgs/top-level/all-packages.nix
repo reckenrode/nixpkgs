@@ -34967,7 +34967,7 @@ with pkgs;
 
   sticky = callPackage ../applications/misc/sticky { };
 
-  stork = callPackage ../applications/misc/stork { };
+  stork = darwin.apple_sdk_11_0.callPackage ../applications/misc/stork { };
 
   oclgrind = callPackage ../development/tools/analysis/oclgrind { };
 
