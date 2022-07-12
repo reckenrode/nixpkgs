@@ -41,7 +41,7 @@ assert crossSystem == localSystem;
 let
   inherit (localSystem) system;
 
-  useAppleSDKLibs = localSystem.isAarch64;
+  useAppleSDKLibs = lib.versionAtLeast localSystem.darwinSdkVersion "11.0";
   haveKRB5 = localSystem.isx86_64;
 
   # final toolchain is injected into llvmPackages_${finalLlvmVersion}
