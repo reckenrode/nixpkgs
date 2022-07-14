@@ -6,6 +6,8 @@
 }:
 
 let
+  sdk = version: "apple_sdk_${lib.replaceStrings ["."] ["_"] version}";
+
   otherSplices = {
     selfBuildBuild = pkgsBuildBuild.darwin;
     selfBuildHost = pkgsBuildHost.darwin;
@@ -23,6 +25,14 @@ let
 in
 
 lib.makeScopeWithSplicing splicePackages newScope otherSplices (_: {}) (spliced: spliced.apple_sdk.frameworks) (self: let
+  sdks = {
+    "10.12" = pkgs.callPackage ../os-specific/darwin/apple-sdk {
+      inherit (buildPackages.darwin) print-reexports;
+      inherit (self) darwin-stubs;
+    };
+    "11.0" = pkgs.callPackage ../os-specific/darwin/apple-sdk-11.0 { };
+  };
+
   inherit (self) mkDerivation callPackage;
 
   # Must use pkgs.callPackage to avoid infinite recursion.
@@ -32,21 +42,12 @@ lib.makeScopeWithSplicing splicePackages newScope otherSplices (_: {}) (spliced:
 
   impure-cmds = pkgs.callPackage ../os-specific/darwin/impure-cmds { };
 
-  # macOS 10.12 SDK
-  apple_sdk_10_12 = pkgs.callPackage ../os-specific/darwin/apple-sdk {
-    inherit (buildPackages.darwin) print-reexports;
-    inherit (self) darwin-stubs;
-  };
-
-  # macOS 11.0 SDK
-  apple_sdk_11_0 = pkgs.callPackage ../os-specific/darwin/apple-sdk-11.0 { };
-
   # Pick an SDK
-  apple_sdk = if stdenv.hostPlatform.isAarch64 then apple_sdk_11_0 else apple_sdk_10_12;
+  apple_sdk = sdks."${stdenv.hostPlatform.darwinSdkVersion}";
 
   # Pick the source of libraries: either Apple's open source releases, or the
   # SDK.
-  useAppleSDKLibs = stdenv.hostPlatform.isAarch64;
+  useAppleSDKLibs = !apple_sdk.isSourceSDK;
 
   selectAttrs = attrs: names:
     lib.listToAttrs (lib.concatMap (n: if attrs ? "${n}" then [(lib.nameValuePair n attrs."${n}")] else []) names);
@@ -70,7 +71,10 @@ in
 
 impure-cmds // appleSourcePackages // chooseLibs // {
 
-  inherit apple_sdk apple_sdk_10_12 apple_sdk_11_0;
+  inherit apple_sdk;
+
+  apple_sdk_10_12 = sdks."10.12";
+  apple_sdk_11_0 = sdks."11.0";
 
   stdenvNoCF = stdenv.override {
     extraBuildInputs = [];

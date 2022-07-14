@@ -41,6 +41,8 @@ let
   packages = {
     inherit (callPackage ./apple_sdk.nix {}) frameworks libs;
 
+    isSourceSDK = false;
+
     # TODO: this is nice to be private. is it worth the callPackage above?
     # Probably, I don't think that callPackage costs much at all.
     inherit MacOSX-SDK;

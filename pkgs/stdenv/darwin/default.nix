@@ -41,7 +41,7 @@ assert crossSystem == localSystem;
 let
   inherit (localSystem) system;
 
-  useAppleSDKLibs = lib.versionAtLeast localSystem.darwinSdkVersion "11.0";
+  useAppleSDKLibs = darwin: !darwin.apple_sdk.isSourceSDK;
   haveKRB5 = localSystem.isx86_64;
 
   # final toolchain is injected into llvmPackages_${finalLlvmVersion}
@@ -282,7 +282,7 @@ rec {
           bintools = selfDarwin.binutils-unwrapped;
           inherit (selfDarwin) postLinkSignHook signingUtils;
         };
-      } // lib.optionalAttrs (! useAppleSDKLibs) {
+      } // lib.optionalAttrs (! (useAppleSDKLibs super.darwin)) {
         CF = stdenv.mkDerivation {
           name = "bootstrap-stage0-CF";
           buildCommand = ''
@@ -415,7 +415,7 @@ rec {
         [ bootstrapTools ] ++
         (with pkgs; [ coreutils gnugrep ]) ++
         (with pkgs."${finalLlvmPackages}"; [ libcxx libcxxabi compiler-rt clang-unwrapped ]) ++
-        (with pkgs.darwin; [ Libsystem CF ] ++ lib.optional useAppleSDKLibs objc4);
+        (with pkgs.darwin; [ Libsystem CF ] ++ lib.optional (useAppleSDKLibs pkgs.darwin) objc4);
 
       overrides = persistent;
     };
@@ -494,7 +494,7 @@ rec {
           compiler-rt
           clang-unwrapped
         ]) ++
-        (with pkgs.darwin; [ dyld Libsystem CF ICU locale ] ++ lib.optional useAppleSDKLibs objc4);
+        (with pkgs.darwin; [ dyld Libsystem CF ICU locale ] ++ lib.optional (useAppleSDKLibs pkgs.darwin) objc4);
 
       overrides = persistent;
     };
@@ -572,7 +572,7 @@ rec {
           compiler-rt
           clang-unwrapped
         ]) ++
-        (with pkgs.darwin; [ dyld ICU Libsystem locale ] ++ lib.optional useAppleSDKLibs objc4);
+        (with pkgs.darwin; [ dyld ICU Libsystem locale ] ++ lib.optional (useAppleSDKLibs pkgs.darwin) objc4);
 
       overrides = persistent;
     };
@@ -611,7 +611,7 @@ rec {
           inherit (darwin) dyld Libsystem libiconv locale darwin-stubs;
 
           # See useAppleSDKLibs in darwin-packages.nix
-          CF = if useAppleSDKLibs then super.darwin.CF else
+          CF = if (useAppleSDKLibs super.darwin) then super.darwin.CF else
           superDarwin.CF.override {
             inherit libxml2;
             python3 = prevStage.python3;
@@ -767,7 +767,7 @@ rec {
         libiconv
         locale
         libtapi
-      ] ++ lib.optional useAppleSDKLibs objc4
+      ] ++ lib.optional (useAppleSDKLibs pkgs.darwin) objc4
       ++ lib.optionals doSign [ postLinkSignHook sigtool signingUtils ]);
 
       overrides = lib.composeExtensions persistent (self: super: {

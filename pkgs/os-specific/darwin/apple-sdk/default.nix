@@ -335,5 +335,7 @@ in rec {
 
   frameworks = bareFrameworks // overrides bareFrameworks;
 
+  isSourceSDK = true;
+
   inherit sdk;
 }
