@@ -34,6 +34,8 @@ mkDerivation rec {
     })
   ];
 
+  sandboxProfile = qtbase.__sandboxProfile;
+
   qmakeFlags = [
     # setup hook only sets QMAKE_LRELEASE, set QMAKE_LUPDATE too:
     "QMAKE_LUPDATE=${qttools.dev}/bin/lupdate"
