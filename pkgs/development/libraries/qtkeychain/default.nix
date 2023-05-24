@@ -25,6 +25,9 @@ stdenv.mkDerivation rec {
 
   patches = [ ./0002-Fix-install-name-Darwin.patch ];
 
+  # HACK `propagatedSandboxProfile` does not appear to actually propagate the sandbox profile
+  sandboxProfile = qtbase.__sandboxProfile;
+
   cmakeFlags = [
     "-DBUILD_WITH_QT6=${if lib.versions.major qtbase.version == "6" then "ON" else "OFF"}"
     "-DQT_TRANSLATIONS_DIR=share/qt/translations"
