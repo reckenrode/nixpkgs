@@ -1,4 +1,4 @@
-{lib, stdenv, fetchurl}:
+{lib, stdenv, fetchurl, fetchpatch}:
 
 stdenv.mkDerivation rec {
   pname = "gperf";
@@ -8,6 +8,11 @@ stdenv.mkDerivation rec {
     url = "mirror://gnu/${pname}/${pname}-${version}.tar.gz";
     sha256 = "1qispg6i508rq8pkajh26cznwimbnj06wq9sd85vg95v8nwld1aq";
   };
+
+  patches = [
+    # Clang 16 defaults to C++17, which does not allow `register` as a storage class specifier.
+    ./gperf-c++17-register-fix.patch
+  ];
 
   enableParallelBuilding = true;
 
