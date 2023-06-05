@@ -86,6 +86,15 @@ ld64 = stdenv.mkDerivation rec {
     xar
   ];
 
+  checkPhase = ''
+    runHook preCheck
+
+    cd unit-tests
+    ./run-all-unit-tests
+
+    runHook postCheck
+  '';
+
   installPhase = ''
     runHook preInstall
 
