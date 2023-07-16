@@ -23,5 +23,7 @@ buildNodejs {
       url = "https://github.com/nodejs/node/pull/48597.patch";
       hash = "sha256-FmHmwlTxPw5mTW6t4zuy9vr4FxopjU4Kx+F1aqabG1s=";
     })
+    # Fix for enum width error when compiling with clang 16.
+    ./enum-width-fix-backport.patch
   ];
 }
