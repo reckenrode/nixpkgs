@@ -311,14 +311,14 @@ in let
 
     compiler-rt-libc = callPackage ./compiler-rt {
       inherit llvm_meta;
-      stdenv = if stdenv.hostPlatform.useLLVM or false
+      stdenv = if (stdenv.hostPlatform.useLLVM or false) || stdenv.hostPlatform.isDarwin
                then overrideCC stdenv buildLlvmTools.clangNoCompilerRtWithLibc
                else stdenv;
     };
 
     compiler-rt-no-libc = callPackage ./compiler-rt {
       inherit llvm_meta;
-      stdenv = if stdenv.hostPlatform.useLLVM or false
+      stdenv = if (stdenv.hostPlatform.useLLVM or false) || stdenv.hostPlatform.isDarwin
                then overrideCC stdenv buildLlvmTools.clangNoCompilerRt
                else stdenv;
     };
