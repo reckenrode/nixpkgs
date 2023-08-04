@@ -87,10 +87,10 @@ let
     clang-unwrapped = tools.libclang;
 
     # disabled until recommonmark supports sphinx 3
-    #Llvm-manpages = lowPrio (tools.libllvm.override {
-    #  enableManpages = true;
-    #  python3 = pkgs.python3;  # don't use python-boot
-    #});
+    llvm-manpages = lowPrio (tools.libllvm.override {
+      enableManpages = true;
+      python3 = pkgs.python3;  # don't use python-boot
+    });
 
     clang-manpages = lowPrio (tools.libclang.override {
       enableManpages = true;
