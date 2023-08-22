@@ -24,7 +24,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "MoltenVK";
-  version = "1.2.4";
+  version = "1.2.5";
 
   buildInputs = [
     AppKit
@@ -47,7 +47,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "KhronosGroup";
     repo = "MoltenVK";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-BL46BgZHUpk0dpzmeZ/2W0msHxFwieeGDjmVB8Nb1J4=";
+    hash = "sha256-ZW9uXTgxHonatF8T6J0fe+2mhxFZ6MbI8tvMb07GDAE=";
   };
 
   patches = [
