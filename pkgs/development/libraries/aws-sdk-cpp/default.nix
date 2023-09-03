@@ -64,6 +64,8 @@ stdenv.mkDerivation rec {
     rm tests/aws-cpp-sdk-core-tests/aws/client/AdaptiveRetryStrategyTest.cpp
   '';
 
+  doCheck = !(stdenv.isDarwin && stdenv.isx86_64);
+
   # FIXME: might be nice to put different APIs in different outputs
   # (e.g. libaws-cpp-sdk-s3.so in output "s3").
   outputs = [ "out" "dev" ];
@@ -91,7 +93,9 @@ stdenv.mkDerivation rec {
     "-DCURL_HAS_TLS_PROXY=1"
     "-DTARGET_ARCH=${host_os}"
   ] ++ lib.optional (apis != ["*"])
-    "-DBUILD_ONLY=${lib.concatStringsSep ";" apis}";
+    "-DBUILD_ONLY=${lib.concatStringsSep ";" apis}"
+    # Tests don’t work right under macOS 14
+    ++ lib.optional stdenv.isDarwin "-DENABLE_TESTING=OFF";
 
   env.NIX_CFLAGS_COMPILE = toString [
     # openssl 3 generates several deprecation warnings

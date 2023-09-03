@@ -79,6 +79,10 @@ buildPythonPackage rec {
     # 6 tests fail with: dns.resolver.LifetimeTimeout: The resolution lifetime expired after ...
     "testResolveCacheHit"
     "testResolveTCP"
+    "testQueryTLSWithContext"
+    "testQueryTLSWithSocket"
+    "test_basic_ddr_sync"
+    "test_basic_ddr_async"
   ];
 
   pythonImportsCheck = [
