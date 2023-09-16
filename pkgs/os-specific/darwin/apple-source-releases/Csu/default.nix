@@ -1,6 +1,10 @@
-{ lib, appleDerivation', stdenv }:
+{ lib
+, buildPackages
+, stdenvNoLibs
+, appleDerivation'
+}:
 
-appleDerivation' stdenv {
+appleDerivation' stdenvNoLibs {
 
   prePatch = ''
     substituteInPlace Makefile \
