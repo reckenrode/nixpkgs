@@ -1,8 +1,19 @@
-{ lib, stdenv, appleDerivation', launchd, bootstrap_cmds, xnu, xpc, ppp, IOKit, eap8021x, Security
-, headersOnly ? false }:
+{ lib
+, appleDerivation'
+, stdenvBootstrap
+, bootstrap_cmds
+, launchd
+, ppp
+, xpc
+, IOKit
+, eap8021x
+, Security
+, xnu
+, headersOnly ? false
+}:
 
-appleDerivation' stdenv {
-  meta.broken = stdenv.cc.nativeLibc;
+appleDerivation' stdenvBootstrap {
+  meta.broken = stdenvBootstrap.cc.nativeLibc;
 
   nativeBuildInputs = lib.optionals (!headersOnly) [ bootstrap_cmds ];
   buildInputs = lib.optionals (!headersOnly) [ launchd ppp xpc IOKit eap8021x ];
