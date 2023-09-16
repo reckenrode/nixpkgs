@@ -1,8 +1,17 @@
-{ lib, appleDerivation', stdenv, stdenvNoCC, Libinfo, configdHeaders, mDNSResponder
+{ lib
+, Libsystem
+, stdenvNoCC
+, stdenvBootstrap
+, buildPackages
+, overrideCC
+, appleDerivation'
+, Libinfo
+, configdHeaders
+, mDNSResponder
 , headersOnly ? false
 }:
 
-appleDerivation' (if headersOnly then stdenvNoCC else stdenv) {
+appleDerivation' (if headersOnly then stdenvNoCC else stdenvBootstrap) {
   buildInputs = lib.optionals (!headersOnly) [ Libinfo configdHeaders mDNSResponder ];
 
   buildPhase = lib.optionalString (!headersOnly) ''
