@@ -61,6 +61,8 @@ makeScopeWithSplicing' {
         then apple_sdk.frameworks
         else appleSourcePackages
     ) Security;
+  } // lib.optionalAttrs (!useAppleSDKLibs) {
+    LibsystemCross = self.Libsystem;
   };
 in
 
