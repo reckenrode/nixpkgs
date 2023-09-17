@@ -25932,7 +25932,9 @@ with pkgs;
 
   zeitgeist = callPackage ../development/libraries/zeitgeist { };
 
-  zlib = callPackage ../development/libraries/zlib { };
+  zlib = callPackage ../development/libraries/zlib {
+    stdenv = if stdenv.isDarwin then darwin.stdenvNoCF else stdenv;
+  };
 
   zlib-ng = callPackage ../development/libraries/zlib-ng { };
 
