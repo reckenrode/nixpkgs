@@ -325,9 +325,12 @@ in let
 
     compiler-rt-libc = callPackage ./compiler-rt {
       inherit llvm_meta;
-      stdenv = if stdenv.hostPlatform.useLLVM or false || (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isStatic)
-               then overrideCC stdenv buildLlvmTools.clangNoCompilerRtWithLibc
-               else stdenv;
+      # Build compiler-rt without CF to prevent an infinite recursion when cross-compiling to Darwin.
+      stdenv = if stdenv.hostPlatform.isDarwin && (stdenv.buildPlatform != stdenv.hostPlatform)
+        then overrideCC darwin.stdenvNoCF buildLlvmTools.clangNoCompilerRtWithLibc
+        else if stdenv.hostPlatform.useLLVM or false || stdenv.isDarwin
+        then overrideCC stdenv buildLlvmTools.clangNoCompilerRtWithLibc
+        else stdenv;
     };
 
     compiler-rt-no-libc = callPackage ./compiler-rt {
@@ -378,7 +381,7 @@ in let
       #
       # We cannot use `clangNoLibcxx` because that contains `compiler-rt` which,
       # on macOS, depends on `libcxxabi`, thus forming a cycle.
-      stdenv_ = overrideCC stdenv buildLlvmTools.clangNoCompilerRtWithLibc;
+      stdenv_ = overrideCC (if stdenv.hostPlatform.isDarwin then darwin.stdenvNoCF else stdenv) buildLlvmTools.clangNoCompilerRtWithLibc;
     in callPackage ./libcxxabi {
       stdenv = stdenv_;
       inherit llvm_meta cxx-headers;
@@ -389,12 +392,12 @@ in let
     # stdenv's compiler.
     libcxx = callPackage ./libcxx {
       inherit llvm_meta;
-      stdenv = overrideCC stdenv buildLlvmTools.clangNoLibcxx;
+      stdenv = overrideCC (if stdenv.hostPlatform.isDarwin then darwin.stdenvNoCF else stdenv) buildLlvmTools.clangNoLibcxx;
     };
 
     libunwind = callPackage ./libunwind {
       inherit llvm_meta;
-      stdenv = overrideCC stdenv buildLlvmTools.clangNoLibcxx;
+      stdenv = overrideCC (if stdenv.hostPlatform.isDarwin then darwin.stdenvNoCF else stdenv) buildLlvmTools.clangNoLibcxx;
     };
 
     openmp = callPackage ./openmp {
