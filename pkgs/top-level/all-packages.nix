@@ -23334,7 +23334,9 @@ with pkgs;
     ln -sv ${libcDev}/include/iconv.h $out/include
   '';
 
-  libiconvReal = callPackage ../development/libraries/libiconv { };
+  libiconvReal = callPackage ../development/libraries/libiconv {
+    stdenv = if stdenv.isDarwin then darwin.stdenvNoCF else stdenv;
+  };
 
   iconv =
     if lib.elem stdenv.hostPlatform.libc [ "glibc" "musl" ] then
