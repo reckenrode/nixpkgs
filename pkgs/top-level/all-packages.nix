@@ -22316,7 +22316,9 @@ with pkgs;
     nativeBuildRoot = buildPackages.icu72.override { buildRootOnly = true; };
   });
 
-  icu = icu73;
+  icu = icu73.override {
+    stdenv = if stdenv.isDarwin then darwin.stdenvNoCF else stdenv;
+  };
 
   id3lib = callPackage ../development/libraries/id3lib { };
 
