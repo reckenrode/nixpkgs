@@ -23931,6 +23931,7 @@ with pkgs;
   libxmi = callPackage ../development/libraries/libxmi { };
 
   libxml2 = callPackage ../development/libraries/libxml2 {
+    stdenv = if stdenv.isDarwin then darwin.stdenvNoCF else stdenv;
     python = python3;
   };
 
