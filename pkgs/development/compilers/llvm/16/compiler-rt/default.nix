@@ -9,7 +9,7 @@ let
   useLLVM = stdenv.hostPlatform.useLLVM or false;
   bareMetal = stdenv.hostPlatform.parsed.kernel.name == "none";
   haveLibc = stdenv.cc.libc != null;
-  isDarwinStatic = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isStatic;
+  isDarwinCross = stdenv.hostPlatform.isDarwin && (stdenv.buildPlatform != stdenv.hostPlatform);
   inherit (stdenv.hostPlatform) isMusl isGnu;
 
   baseName = "compiler-rt";
@@ -49,7 +49,7 @@ stdenv.mkDerivation {
     "-DCMAKE_ASM_COMPILER_TARGET=${stdenv.hostPlatform.config}"
   ] ++ lib.optionals (haveLibc && stdenv.hostPlatform.libc == "glibc") [
     "-DSANITIZER_COMMON_CFLAGS=-I${libxcrypt}/include"
-  ] ++ lib.optionals (useLLVM || bareMetal || isMusl || isDarwinStatic) [
+  ] ++ lib.optionals (useLLVM || bareMetal || isMusl || isDarwinCross) [
     "-DCOMPILER_RT_BUILD_SANITIZERS=OFF"
     "-DCOMPILER_RT_BUILD_XRAY=OFF"
     "-DCOMPILER_RT_BUILD_LIBFUZZER=OFF"
@@ -57,7 +57,7 @@ stdenv.mkDerivation {
     "-DCOMPILER_RT_BUILD_ORC=OFF" # may be possible to build with musl if necessary
   ] ++ lib.optionals (useLLVM || bareMetal) [
      "-DCOMPILER_RT_BUILD_PROFILE=OFF"
-  ] ++ lib.optionals ((useLLVM && !haveLibc) || bareMetal || isDarwinStatic ) [
+  ] ++ lib.optionals ((useLLVM && !haveLibc) || bareMetal || isDarwinCross) [
     "-DCMAKE_CXX_COMPILER_WORKS=ON"
   ] ++ lib.optionals ((useLLVM && !haveLibc) || bareMetal) [
     "-DCMAKE_C_COMPILER_WORKS=ON"
