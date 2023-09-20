@@ -2,6 +2,7 @@
 , buildPackages, pkgs, targetPackages
 , generateSplicesForMkScope, makeScopeWithSplicing'
 , stdenv
+, overrideCC
 , preLibcCrossHeaders
 , config
 }:
@@ -73,6 +74,59 @@ impure-cmds // appleSourcePackages // chooseLibs // {
   stdenvNoCF = stdenv.override {
     extraBuildInputs = [];
   };
+
+  # Rewrapping clang is necessary to avoid infinite recursions while overriding Libsystem.
+  # This is used for building dependencies of Libsystem that require a working clang.
+  stdenvBootstrap = overrideCC buildPackages.targetPackages.darwin.stdenvNoCF (import ../build-support/cc-wrapper (
+    let
+      LibsystemNoResolv = buildPackages.targetPackages.darwin.Libsystem.override { withLibresolv = false; };
+    in
+    {
+      inherit lib;
+      inherit (buildPackages) stdenvNoCC coreutils gnugrep;
+
+      nativeTools = false;
+      nativeLibc = false;
+
+      cc = buildPackages.llvmPackages.clang-unwrapped;
+      libc = LibsystemNoResolv;
+
+      bintools = import ../build-support/bintools-wrapper {
+        inherit lib;
+        inherit (buildPackages) stdenvNoCC coreutils gnugrep;
+
+        libc = LibsystemNoResolv;
+
+        bintools = buildPackages.darwin.binutils-unwrapped;
+
+        nativeTools = false;
+        nativeLibc = false;
+
+        inherit (buildPackages.darwin) postLinkSignHook signingUtils;
+      };
+
+      extraBuildCommands =
+        let
+          inherit (buildPackages.llvmPackages) clang-unwrapped release_version;
+
+          # Clang 16+ uses only the major version in resource-root, but older versions use the complete one.
+          clangResourceRootIncludePath = clangLib: clangRelease:
+            let
+              clangVersion =
+                if lib.versionAtLeast clangRelease "16"
+                then lib.versions.major clangRelease
+                else clangRelease;
+            in
+            "${clangLib}/lib/clang/${clangVersion}/include";
+        in
+        ''
+          rsrc="$out/resource-root"
+          mkdir "$rsrc"
+          ln -s "${clangResourceRootIncludePath clang-unwrapped.lib release_version}" "$rsrc"
+          echo "-resource-dir=$rsrc" >> $out/nix-support/cc-cflags
+        '';
+    })
+  );
 
   binutils-unwrapped = callPackage ../os-specific/darwin/binutils {
     inherit (pkgs) binutils-unwrapped;
