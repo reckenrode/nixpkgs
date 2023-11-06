@@ -191,6 +191,10 @@ in
   sha256 = "sha256-XtykrPd5h/tsnjY1wGjzSOJ+AyyNLsfnjuOZ5Ryq9vA=";
 })
 
+# Fix undefined symbol errors when building older versions with clang.
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=92061.
+++ optional (!atLeast11 && stdenv.cc.isClang) ./clang-genconditions.patch
+
 
 ## gcc 9.0 and older ##############################################################################
 
