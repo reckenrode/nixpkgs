@@ -67,6 +67,7 @@
 , enableOSMesa ? stdenv.isLinux
 , enableOpenCL ? stdenv.isLinux && stdenv.isx86_64
 , enablePatentEncumberedCodecs ? true
+, overrideSDK
 , jdupes
 , rustPlatform
 , rust-bindgen
@@ -255,7 +256,10 @@ self = stdenv.mkDerivation {
     ++ lib.optional haveZink vulkan-loader
     ++ lib.optional haveDozen directx-headers;
 
-  depsBuildBuild = [ pkg-config buildPackages.stdenv.cc ];
+  depsBuildBuild = [ pkg-config ]
+    ++ (if stdenv.isDarwin
+      then [ (overrideSDK buildPackages.stdenv "11.0").cc ]
+      else [ buildPackages.stdenv.cc ]);
 
   nativeBuildInputs = [
     meson pkg-config ninja
