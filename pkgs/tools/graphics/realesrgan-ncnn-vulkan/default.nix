@@ -37,8 +37,6 @@ stdenv.mkDerivation rec {
   cmakeFlags = [
     "-DUSE_SYSTEM_NCNN=1"
     "-DUSE_SYSTEM_WEBP=1"
-
-    "-DGLSLANG_TARGET_DIR=${glslang}/lib/cmake"
   ];
 
   nativeBuildInputs = [ cmake ];
@@ -55,7 +53,7 @@ stdenv.mkDerivation rec {
     cp -r ${models}/models $out/share
   '';
 
-  postFixup = ''
+  postFixup = lib.optionalString stdenv.isLinux ''
     patchelf $out/bin/realesrgan-ncnn-vulkan --add-needed libvulkan.so
   '';
 
