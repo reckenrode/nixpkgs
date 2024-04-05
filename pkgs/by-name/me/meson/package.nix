@@ -81,6 +81,10 @@ python3.pkgs.buildPythonApplication rec {
       url = "https://github.com/mesonbuild/meson/commit/c21b886ba8a60cce7fa56e4be40bd7547129fb00.patch";
       hash = "sha256-uSilNuSx9yd1cxs0XVLcLw4MOXEd2uIe2g+wk+SBqeU=";
     })
+
+    # Fix extraframework lookup on case-sensitive APFS.
+    # https://github.com/mesonbuild/meson/pull/13038
+    ./007-case-sensitive-fs.patch
   ];
 
   buildInputs = lib.optionals (python3.pythonOlder "3.9") [
