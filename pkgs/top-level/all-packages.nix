@@ -23163,7 +23163,7 @@ with pkgs;
   lirc = callPackage ../development/libraries/lirc { };
 
   liquid-dsp = callPackage ../development/libraries/liquid-dsp {
-    inherit (darwin) autoSignDarwinBinariesHook cctools;
+    inherit (darwin) autoSignDarwinBinariesHook;
   };
 
   liquidfun = callPackage ../development/libraries/liquidfun { };
