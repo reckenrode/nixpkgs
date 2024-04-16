@@ -67,6 +67,7 @@ mapAliases ({
   libauto = throw "'darwin.libauto' has been removed, as it was broken and unmaintained"; # added 2024-05-10
   libiconv = pkgs.libiconv; # 2024-03-27
   libtapi = pkgs.libtapi; # added 2024-05-15
+  libunwind = pkgs.libunwind; # added 2024-05-15
 
   ### O ###
 
