@@ -1097,17 +1097,25 @@ in
           libc = selfDarwin.Libsystem;
         };
 
-        # binutils-unwrapped needs to build the LLVM man pages, which requires sphinx. Sphinx
-        # has hatch-vcs as a transitive dependency, which pulls in git (and curl).
-        # Disabling the tests for hatch-vcs allows the stdenv bootstrap to avoid having
-        # any dependency on curl other than the one provided in the bootstrap tools.
+        # binutils-unwrapped needs to build the LLVM man pages, which requires a lot of Python stuff
+        # that ultimiately ends up depending on git. Fortunately, the git dependency is only for check
+        # inputs. The following set of overrides allow the LLVM documentation to be built without
+        # pulling curl (and other packages like ffmpeg) into the stdenv bootstrap.
         binutils-unwrapped = superDarwin.binutils-unwrapped.override (old: {
           llvm-manpages = super.llvmPackages.llvm-manpages.override {
-            python3Packages = prevStage.python3.pkgs.overrideScope (_: superPython: {
-              hatch-vcs = (superPython.hatch-vcs.override {
-                git = null;
-                pytestCheckHook = null;
-              });
+            python3Packages = self.python3.pkgs.overrideScope (_: superPython: {
+              hatch-vcs = superPython.hatch-vcs.overrideAttrs {
+                doInstallCheck = false;
+              };
+              markdown-it-py = superPython.markdown-it-py.overrideAttrs {
+                doInstallCheck = false;
+              };
+              mdit-py-plugins = superPython.mdit-py-plugins.overrideAttrs {
+                doInstallCheck = false;
+              };
+              myst-parser = superPython.myst-parser.overrideAttrs {
+                doInstallCheck = false;
+              };
             });
           };
         });
