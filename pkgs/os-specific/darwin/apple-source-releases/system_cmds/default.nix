@@ -25,7 +25,6 @@
   Kernel,
   Libc,
   OpenDirectory,
-  WebKit,
 }:
 
 let
@@ -99,6 +98,12 @@ let
   };
 in
 appleDerivation (finalAttrs: {
+  patches = [
+    # system_cmds detects C23 attributes and tries to use `[[noreturn]]` after `static`, but
+    # that is invalid. Moving the macro to before `static` allows it to build with clang 18.
+    ./0001-Fix-order-of-noreturn-for-C23-and-clang-18.patch
+  ];
+
   nativeBuildInputs = [
     gawk
     meson
