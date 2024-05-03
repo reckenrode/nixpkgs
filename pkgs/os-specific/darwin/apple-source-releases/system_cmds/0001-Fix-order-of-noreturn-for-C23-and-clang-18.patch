@@ -1,0 +1,65 @@
+From c6fb3bce0ea7cdd50f84dd911453fd0630146f89 Mon Sep 17 00:00:00 2001
+From: Randy Eckenrode <randy@largeandhighquality.com>
+Date: Fri, 3 May 2024 07:49:51 -0400
+Subject: [PATCH] Fix order of `[[noreturn]]` for C23 and clang 18
+
+---
+ zdump/zdump.c | 2 +-
+ zic/zic.c     | 8 ++++----
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/zdump/zdump.c b/zdump/zdump.c
+index 28f3965..4b181a5 100644
+--- a/zdump/zdump.c
++++ b/zdump/zdump.c
+@@ -126,7 +126,7 @@ is_alpha(char a)
+ 	}
+ }
+ 
+-static ATTRIBUTE_NORETURN void
++ATTRIBUTE_NORETURN static void
+ size_overflow(void)
+ {
+   fprintf(stderr, _("%s: size overflow\n"), progname);
+diff --git a/zic/zic.c b/zic/zic.c
+index 3895bd6..8808ec1 100644
+--- a/zic/zic.c
++++ b/zic/zic.c
+@@ -462,14 +462,14 @@ static char		roll[TZ_MAX_LEAPS];
+ ** Memory allocation.
+ */
+ 
+-static ATTRIBUTE_NORETURN void
++ATTRIBUTE_NORETURN static void
+ memory_exhausted(const char *msg)
+ {
+ 	fprintf(stderr, _("%s: Memory exhausted: %s\n"), progname, msg);
+ 	exit(EXIT_FAILURE);
+ }
+ 
+-static ATTRIBUTE_NORETURN void
++ATTRIBUTE_NORETURN static void
+ size_overflow(void)
+ {
+   memory_exhausted(_("size overflow"));
+@@ -667,7 +667,7 @@ close_file(FILE *stream, char const *dir, char const *name,
+   }
+ }
+ 
+-static ATTRIBUTE_NORETURN void
++ATTRIBUTE_NORETURN static void
+ usage(FILE *stream, int status)
+ {
+   fprintf(stream,
+@@ -3776,7 +3776,7 @@ getfields(char *cp, char **array, int arrayelts)
+ 	return nsubs;
+ }
+ 
+-static ATTRIBUTE_NORETURN void
++ATTRIBUTE_NORETURN static void
+ time_overflow(void)
+ {
+   error(_("time overflow"));
+-- 
+2.44.0
+
