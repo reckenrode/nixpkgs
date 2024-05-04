@@ -11,7 +11,6 @@
 , pkg-config
 , stdenv
 , zstd
-, autoreconfHook
 }:
 
 stdenv.mkDerivation rec {
@@ -27,7 +26,7 @@ stdenv.mkDerivation rec {
   outputMan = "out"; # users will want `man man` to work
 
   strictDeps = true;
-  nativeBuildInputs = [ autoreconfHook groff makeWrapper pkg-config zstd ];
+  nativeBuildInputs = [ groff makeWrapper pkg-config zstd ];
   buildInputs = [ libpipeline db groff ]; # (Yes, 'groff' is both native and build input)
   nativeCheckInputs = [ libiconv /* for 'iconv' binary */ ];
 
