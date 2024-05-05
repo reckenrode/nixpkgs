@@ -305,6 +305,14 @@ let
         ../common/compiler-rt/armv6-mcr-dmb.patch
         ../common/compiler-rt/armv6-sync-ops-no-thumb.patch
         ../common/compiler-rt/armv6-no-ldrexd-strexd.patch
+        # Fix build with clang 17 due to https://github.com/llvm/llvm-project/commit/0b0672773e8b2ed01ad3fce103f4d84becfdd1ed.
+        (fetchpatch {
+          url = "https://github.com/llvm/llvm-project/commit/c57c7b7c99605021123b54c02e57943923874cbe.patch";
+          stripLen = 1;
+          hash = lib.fakeHash;
+        })
+        # Fix build with clang 18 due to https://github.com/llvm/llvm-project/commit/d506aa4edfa66074db3dc1fa84da9d9c80d71500.
+        ../12/compiler-rt/clang18-compat.patch
       ];
       inherit llvm_meta;
       stdenv = if stdenv.hostPlatform.useLLVM or false
@@ -327,6 +335,20 @@ let
         ../common/compiler-rt/armv6-mcr-dmb.patch
         ../common/compiler-rt/armv6-sync-ops-no-thumb.patch
         ../common/compiler-rt/armv6-no-ldrexd-strexd.patch
+        # Prerequisite patch needed for the next patch.
+        (fetchpatch {
+          url = "https://github.com/llvm/llvm-project/commit/b46c89892fe25bec197fd30f09b3a312da126422.patch";
+          stripLen = 1;
+          hash = "sha256-GnOu+Yjd22HbXGUOYyEfV9OC0qtDAbj6SM20KxSYtGE=";
+        })
+        # Fix build with clang 17 due to https://github.com/llvm/llvm-project/commit/0b0672773e8b2ed01ad3fce103f4d84becfdd1ed.
+        (fetchpatch {
+          url = "https://github.com/llvm/llvm-project/commit/c57c7b7c99605021123b54c02e57943923874cbe.patch";
+          stripLen = 1;
+          hash = "sha256-61E7vU2NmyPL7tkvduSCzwm1zOmy8X9tb84cIZiG7YI=";
+        })
+        # Fix build with clang 18 due to https://github.com/llvm/llvm-project/commit/d506aa4edfa66074db3dc1fa84da9d9c80d71500.
+        ../12/compiler-rt/clang18-compat.patch
       ];
       inherit llvm_meta;
       stdenv = if stdenv.hostPlatform.useLLVM or false
