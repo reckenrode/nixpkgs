@@ -1,0 +1,13 @@
+diff -ur a-gcc/libgcc/config/aarch64/lse.S b-gcc/libgcc/config/aarch64/lse.S
+--- a-gcc/libgcc/config/aarch64/lse.S	2024-05-05 14:31:57.713822819 -0400
++++ b-gcc/libgcc/config/aarch64/lse.S	2024-05-05 14:32:56.034550260 -0400
+@@ -197,8 +197,8 @@
+ 	.text
+ 	.balign	16
+ 	.private_extern	_\name
+-	.cfi_startproc
+ _\name:
++	.cfi_startproc
+ 	BTI_C
+ .endm
+ 

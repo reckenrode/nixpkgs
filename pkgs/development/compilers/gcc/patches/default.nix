@@ -182,6 +182,9 @@ in
   }) ];
 }.${majorVersion} or [])
 
+# Fix bootstrapping with clang 18 due to https://github.com/llvm/llvm-project/commit/d506aa4edfa66074db3dc1fa84da9d9c80d71500.
+++ lib.optional (atLeast11 && targetPlatform.isDarwin && targetPlatform.isAarch64) ./11/libgcc-cfi_startproc-darwin.patch
+
 
 ## Windows
 
