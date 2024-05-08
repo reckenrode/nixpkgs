@@ -185,6 +185,14 @@ in
 # Fix bootstrapping with clang 18 due to https://github.com/llvm/llvm-project/commit/d506aa4edfa66074db3dc1fa84da9d9c80d71500.
 ++ lib.optional (atLeast11 && targetPlatform.isDarwin && targetPlatform.isAarch64) ./11/libgcc-cfi_startproc-darwin.patch
 
+# Fix errors when linking with newer versions of ld64 on x86_64-darwin.
+++ optional (is12 && targetPlatform.isDarwin && targetPlatform.isx86_64) (
+  fetchpatch {
+    url = "https://gcc.gnu.org/git/?p=gcc.git;a=patch;h=a3ec0bd85945a271a6a253faea4a073cc1efec9a";
+    hash = "sha256-VKGN6T0JrbR//3JXMxqG4wxCZlWi5af/72n7XQuqdZ4=";
+  }
+)
+
 
 ## Windows
 
