@@ -1,5 +1,5 @@
 { lib, stdenv, callPackage, makeSetupHook, runCommand
-, tzdata
+, tzdata, zlib
 
 # Version specific stuff
 , release, version, src
@@ -23,6 +23,8 @@ let
           --replace "/usr/lib/zoneinfo" "" \
           --replace "/usr/local/etc/zoneinfo" ""
       '';
+
+      buildInputs = [ zlib ];
 
       preConfigure = ''
         cd unix
