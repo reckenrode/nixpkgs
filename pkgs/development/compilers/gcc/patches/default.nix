@@ -81,13 +81,13 @@ in
 
 # Fixes building the bootstrap compiler when the stdenv is using libc++ 17 or newer.
 # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111632.
-++ optional (atLeast6 && /* !atLeast14 && */ stdenv.cc.libcxx != null) (
+++ optional (atLeast6 && !atLeast14 && stdenv.cc.libcxx != null) (
   fetchpatch {
     url = "https://gcc.gnu.org/git/?p=gcc.git;a=patch;h=9970b576b7e4ae337af1268395ff221348c4b34a";
     hash = "sha256-ASHbCbZOFN8xO6MfJQrIuNgHSLPYGIIIJjz9Rclv6/c=";
   }
 )
-++ optional (atLeast12 && /* !atLeast14 && */ stdenv.cc.libcxx != null) (
+++ optional (atLeast12 && !atLeast14 && stdenv.cc.libcxx != null) (
   fetchpatch {
     url = "https://gcc.gnu.org/git/?p=gcc.git;a=patch;h=5213047b1d50af63dfabb5e5649821a6cb157e33";
     hash = "sha256-SUZQb3HHKeCqHxgOpJBrA3PUO8QLy9TYKiNZ8hN+7Bs=";
