@@ -20,8 +20,10 @@ originalAttrs: (stdenv.mkDerivation (finalAttrs: originalAttrs // {
 
     if test "$staticCompiler" = "1"; then
         EXTRA_LDFLAGS="-static"
-    else
+    elif test "$NIX_DONT_SET_RPATH" != "1"; then
         EXTRA_LDFLAGS="-Wl,-rpath,''${!outputLib}/lib"
+    else
+        EXTRA_LDFLAGS=""
     fi
 
     # GCC interprets empty paths as ".", which we don't want.
@@ -56,8 +58,12 @@ originalAttrs: (stdenv.mkDerivation (finalAttrs: originalAttrs // {
                 extraLDFlags=("-L/usr/lib64" "-L/usr/lib")
                 libc_libdir="/usr/lib"
             fi
-            extraLDFlags=("-L$libc_libdir" "-rpath" "$libc_libdir"
-                          "''${extraLDFlags[@]}")
+            extraLDFlags=("-L$libc_libdir")
+            nixDontSetRpathVar=NIX_DONT_SET_RPATH''${post}
+            if test "''${!nixDontSetRpathVar}" != "1"; then
+                extraLDFlags+=("-rpath" "$libc_libdir")
+            fi
+            extraLDFlags+=("''${extraLDFlags[@]}")
             for i in "''${extraLDFlags[@]}"; do
                 declare -g EXTRA_LDFLAGS''${post}+=" -Wl,$i"
             done
