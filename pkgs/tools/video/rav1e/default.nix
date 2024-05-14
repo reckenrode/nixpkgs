@@ -26,7 +26,7 @@ rustPlatform.buildRustPackage rec {
 
   depsBuildBuild = [ pkg-config ];
 
-  nativeBuildInputs = [ cargo-c libgit2 nasm ];
+  nativeBuildInputs = [ cargo-c libgit2 nasm pkg-config ];
 
   buildInputs = [
     zlib
