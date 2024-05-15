@@ -202,6 +202,11 @@ in
   }
 )
 
+# Fix compilation failures on Darwin when building a cross-compiler.
+++ optional (buildPlatform.isDarwin && buildPlatform != targetPlatform) ({
+  "13" = [ ./13/darwin-nullptr.patch ];
+}.${majorVersion} or [])
+
 
 ## Windows
 
