@@ -1,0 +1,102 @@
+diff --git a/gcc/analyzer/diagnostic-manager.cc b/gcc/analyzer/diagnostic-manager.cc
+index 0a447f7ba26..51ac85a2b2b 100644
+--- a/gcc/analyzer/diagnostic-manager.cc
++++ b/gcc/analyzer/diagnostic-manager.cc
+@@ -682,7 +682,7 @@ saved_diagnostic::saved_diagnostic (const state_machine *sm,
+   m_var (var), m_sval (sval), m_state (state),
+   m_d (std::move (d)), m_trailing_eedge (NULL),
+   m_idx (idx),
+-  m_best_epath (NULL), m_problem (NULL),
++  m_best_epath (nullptr), m_problem (nullptr),
+   m_notes ()
+ {
+   gcc_assert (m_stmt || m_stmt_finder);
+@@ -1597,10 +1597,10 @@ public:
+ 					stmt,
+ 					stack_depth,
+ 					sm,
+-					NULL,
++					nullptr,
+ 					src_sm_val,
+ 					dst_sm_val,
+-					NULL,
++					nullptr,
+ 					dst_state,
+ 					src_node));
+     return false;
+@@ -1790,9 +1790,9 @@ struct null_assignment_sm_context : public sm_context
+ 					m_sm,
+ 					var_new_sval,
+ 					from, to,
+-					NULL,
++					nullptr,
+ 					*m_new_state,
+-					NULL));
++					nullptr));
+   }
+ 
+   void set_next_state (const gimple *stmt,
+@@ -1816,9 +1816,9 @@ struct null_assignment_sm_context : public sm_context
+ 					m_sm,
+ 					sval,
+ 					from, to,
+-					NULL,
++					nullptr,
+ 					*m_new_state,
+-					NULL));
++					nullptr));
+   }
+ 
+   void warn (const supernode *, const gimple *,
+diff --git a/gcc/analyzer/infinite-recursion.cc b/gcc/analyzer/infinite-recursion.cc
+index c262e391953..1093a03ccf8 100644
+--- a/gcc/analyzer/infinite-recursion.cc
++++ b/gcc/analyzer/infinite-recursion.cc
+@@ -197,7 +197,7 @@ public:
+ 			m_callee_fndecl,
+ 			m_new_entry_enode->get_stack_depth ()),
+ 	enode,
+-	NULL, NULL, NULL));
++	nullptr, nullptr, nullptr));
+   }
+ 
+   /* Reject paths in which conjured svalues have affected control flow
+diff --git a/gcc/analyzer/region-model.cc b/gcc/analyzer/region-model.cc
+index fb81d43f91b..35d5e5a5eff 100644
+--- a/gcc/analyzer/region-model.cc
++++ b/gcc/analyzer/region-model.cc
+@@ -2545,7 +2545,7 @@ region_model::deref_rvalue (const svalue *ptr_sval, tree ptr_tree,
+ 		  = as_a <const poisoned_svalue *> (ptr_sval);
+ 		enum poison_kind pkind = poisoned_sval->get_poison_kind ();
+ 		ctxt->warn (make_unique<poisoned_value_diagnostic>
+-			      (ptr, pkind, NULL, NULL));
++			      (ptr, pkind, nullptr, nullptr));
+ 	      }
+ 	  }
+       }
+diff --git a/gcc/analyzer/varargs.cc b/gcc/analyzer/varargs.cc
+index aeea73a3899..5fd2cff0380 100644
+--- a/gcc/analyzer/varargs.cc
++++ b/gcc/analyzer/varargs.cc
+@@ -635,7 +635,7 @@ va_list_state_machine::on_va_end (sm_context *sm_ctxt,
+ std::unique_ptr<pending_diagnostic>
+ va_list_state_machine::on_leak (tree var) const
+ {
+-  return make_unique<va_list_leak> (*this, NULL, var);
++  return make_unique<va_list_leak> (*this, nullptr, var);
+ }
+ 
+ } // anonymous namespace
+diff --git a/gcc/value-pointer-equiv.cc b/gcc/value-pointer-equiv.cc
+index aeff2e879b9..3aaa5e94f95 100644
+--- a/gcc/value-pointer-equiv.cc
++++ b/gcc/value-pointer-equiv.cc
+@@ -62,7 +62,7 @@ public:
+ private:
+   auto_vec<std::pair <tree, tree>> m_stack;
+   auto_vec<tree> m_replacements;
+-  const std::pair <tree, tree> m_marker = std::make_pair (NULL, NULL);
++  const std::pair <tree, tree> m_marker = std::make_pair (nullptr, nullptr);
+ };
+ 
+ ssa_equiv_stack::ssa_equiv_stack ()
