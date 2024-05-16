@@ -89,6 +89,10 @@ stdenv.mkDerivation (finalAttrs: {
     })
     ./remove-tools-1.11.patch
     ./go_no_vendor_checks-1.22.patch
+  ]
+  # LLVM 18 renamed `DSYMUTIL_REPRODUCER_PATH` to `LLVM_DIAGNOSTIC_DIR`, which breaks `-linkmode=external`.
+  ++ lib.optionals (stdenv.cc.isClang && lib.versionAtLeast (lib.getVersion stdenv.cc) "18") [
+    ./llvm-18-dsymutil.patch
   ];
 
   GOOS = if stdenv.targetPlatform.isWasi then "wasip1" else stdenv.targetPlatform.parsed.kernel.name;
