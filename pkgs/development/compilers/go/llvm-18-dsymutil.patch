@@ -1,0 +1,13 @@
+diff --git a/src/cmd/link/internal/ld/lib.go b/src/cmd/link/internal/ld/lib.go
+index eab74dc328..19c7cac724 100644
+--- a/src/cmd/link/internal/ld/lib.go
++++ b/src/cmd/link/internal/ld/lib.go
+@@ -1954,7 +1954,7 @@ func (ctxt *Link) hostlink() {
+ 		cmd := exec.Command(dsymutilCmd, "-f", *flagOutfile, "-o", dsym)
+ 		// dsymutil may not clean up its temp directory at exit.
+ 		// Set DSYMUTIL_REPRODUCER_PATH to work around. see issue 59026.
+-		cmd.Env = append(os.Environ(), "DSYMUTIL_REPRODUCER_PATH="+*flagTmpdir)
++		cmd.Env = append(os.Environ(), "LLVM_DIAGNOSTIC_DIR="+*flagTmpdir)
+ 		if ctxt.Debugvlog != 0 {
+ 			ctxt.Logf("host link dsymutil:")
+ 			for _, v := range cmd.Args {
