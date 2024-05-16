@@ -40294,7 +40294,9 @@ with pkgs;
     stdenv =
       if pkgs.stdenv.isDarwin then
         # Match upstream, which builds with the latest SDK and a 10.7 deployment target.
-        overrideSDK pkgs.stdenv {
+        # Pin the stdenv to clang 16. Wine does not build currently with clang 18
+        # due to https://github.com/llvm/llvm-project/commit/d506aa4edfa66074db3dc1fa84da9d9c80d71500.
+        overrideSDK pkgs.llvmPackages_16.stdenv {
           darwinMinVersion = "10.7";
           darwinSdkVersion = "11.0";
         }
