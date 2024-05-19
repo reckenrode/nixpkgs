@@ -27659,8 +27659,6 @@ with pkgs;
 
   ols = callPackage ../development/tools/ols { };
 
-  openpam = callPackage ../development/libraries/openpam { };
-
   openbsm = callPackage ../development/libraries/openbsm { };
 
   pagemon = callPackage ../os-specific/linux/pagemon { };
