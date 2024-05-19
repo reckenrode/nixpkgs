@@ -73,7 +73,9 @@ stdenv.mkDerivation (finalAttrs: {
     substituteAll {
       src = ./007-darwin-bsd-ps-abspath.diff;
       ps = lib.getExe ps;
-    });
+    })
+  # Fix a build failure when building the vendored version of zlib with clang 18.
+  ++ lib.optional (!useSharedLibraries) ./007-remove-fdopen-defines-in-zutil.diff;
 
   outputs = [ "out" ] ++ lib.optionals buildDocs [ "man" "info" ];
   separateDebugInfo = true;
