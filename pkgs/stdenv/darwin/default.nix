@@ -1297,7 +1297,7 @@ in
         file
         findutils
         gawk
-        gettext
+        gettext.out
         gmp.out
         gnugrep
         gnugrep.pcre2.out
