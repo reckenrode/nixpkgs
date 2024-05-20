@@ -37,7 +37,7 @@ stdenv.mkDerivation (finalAttrs: ({
     ./003-revert-avoid-crash-on-macos-14.patch
   ];
 
-  outputs = [ "out" "man" "doc" "info" ];
+  outputs = [ "out" "dev" "man" "doc" "info" ];
 
   hardeningDisable = [ "format" ];
 
@@ -90,8 +90,9 @@ stdenv.mkDerivation (finalAttrs: ({
   ]
   ++ lib.optionals enableLibiconv [
     libiconv
-  ]
-  ++ lib.optionals enableCoreServices [
+  ];
+
+  propagatedBuildInputs = lib.optionals enableCoreServices [
     darwin.apple_sdk.frameworks.CoreServices
   ];
 
@@ -105,10 +106,17 @@ stdenv.mkDerivation (finalAttrs: ({
   enableParallelBuilding = true;
   enableParallelChecking = false; # fails sometimes
 
+  # Two setup hooks are needed. One is for making sure gettext can find its data files at runtime, and the other
+  # is to make sure `libintl` is linked even on non-glibc targets. This is the latter hook. The other is below.
   setupHooks = [
     ../../../build-support/setup-hooks/role.bash
-    ./gettext-setup-hook.sh
+    ./gettext-setup-hook-dev.sh
   ];
+
+  postInstall = ''
+    mkdir -p "$out/nix-support"
+    cat ${../../../build-support/setup-hooks/role.bash} ${./gettext-setup-hook.sh} > "$out/nix-support/setup-hook"
+  '';
 
   meta = {
     homepage = "https://www.gnu.org/software/gettext/";
