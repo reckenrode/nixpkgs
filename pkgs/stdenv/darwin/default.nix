@@ -1354,8 +1354,8 @@ in
 
       overrides = self: super: {
         inherit (prevStage)
-          bash brotli bzip2 coreutils cpio diffutils ed file findutils gawk
-          gettext gmp gnugrep gnumake gnused gnutar gzip icu libffi libiconv libiconv-darwin
+          bash brotli bzip2 coreutils cpio diffutils ed file findutils
+          gmp gnugrep gnumake gnused gzip icu libffi libiconv libiconv-darwin
           libidn2 libssh2 libunistring libxml2 libyaml ncurses nghttp2 openbsm openpam
           openssl patch pbzx pcre python3Minimal xar xz zlib zstd;
 
