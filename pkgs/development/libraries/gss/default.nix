@@ -2,6 +2,9 @@
 , stdenv
 , fetchurl
 , withShishi ? !stdenv.isDarwin
+, autoreconfHook
+, gnulib
+, gtk-doc
 , shishi
 }:
 
@@ -14,6 +17,12 @@ stdenv.mkDerivation rec {
     hash = "sha256-7M6r3vTK4/znIYsuy4PrQifbpEtTthuMKy6IrgJBnHM=";
   };
 
+  # Update `m4/extern-inline.m4` to a version that is compatible with clang 18.
+  postPatch = ''
+    cp ${gnulib}/m4/extern-inline.m4 m4/extern-inline.m4
+  '';
+
+  nativeBuildInputs = [ autoreconfHook gtk-doc ];
   buildInputs = lib.optional withShishi shishi;
 
   # ./stdint.h:89:5: error: expected value in expression
