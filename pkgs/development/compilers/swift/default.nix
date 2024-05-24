@@ -5,6 +5,7 @@
 , llvmPackages
 , llvmPackages_15
 , overrideCC
+, overrideLibcxx
 }:
 
 let
@@ -30,11 +31,6 @@ let
         swiftLlvmPackages.clang.override rec {
           libc = apple_sdk.Libsystem;
           bintools = pkgs.bintools.override { inherit libc; };
-          # Ensure that Swift’s internal clang uses the same libc++ and libc++abi as the
-          # default Darwin stdenv. Using the default libc++ avoids issues (such as crashes)
-          # that can happen when a Swift application dynamically links different versions
-          # of libc++ and libc++abi than libraries it links are using.
-          inherit (llvmPackages) libcxx;
         }
       else
         swiftLlvmPackages.clang;
@@ -43,7 +39,15 @@ let
     # packaging with `swiftPackages.callPackage`. These are similar to
     # `apple_sdk_11_0.callPackage`, with our clang on top.
     inherit (clang) bintools;
-    stdenv = overrideCC pkgs.stdenv clang;
+    stdenv =
+      let
+        stdenv' = overrideCC pkgs.stdenv clang;
+      in
+      # Ensure that Swift’s internal clang uses the same libc++ and libc++abi as the
+      # default clang’s stdenv. Using the default libc++ avoids issues (such as crashes)
+      # that can happen when a Swift application dynamically links different versions
+      # of libc++ and libc++abi than libraries it links are using.
+      if stdenv'.cc.libcxx != null then overrideLibcxx stdenv' else stdenv';
     darwin = pkgs.darwin.overrideScope (_: prev: {
       inherit apple_sdk;
       inherit (apple_sdk) Libsystem LibsystemCross libcharset libunwind objc4 configd IOKit Security;
