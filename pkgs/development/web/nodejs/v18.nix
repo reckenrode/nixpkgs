@@ -24,8 +24,12 @@ buildNodejs {
   patches = [
     ./disable-darwin-v8-system-instrumentation.patch
     ./bypass-darwin-xcrun-node16.patch
-    ./revert-arm64-pointer-auth.patch
     ./node-npm-build-npm-package-logic.patch
     ./trap-handler-backport.patch
+    # Fixes return address signing when cross-compiling to aarch64
+    (fetchpatch {
+      url = "https://github.com/nodejs/node/commit/39916bf4f320d536aece3f0f9fe215f8cf03cbc7.patch";
+      hash = "sha256-wlqFf3HFztn0oZSBJooPKfJL6kXNIn2swGHW97v30Es=";
+    })
   ];
 }
