@@ -26,6 +26,7 @@
 , gdk-pixbuf
 , aalib
 , libcaca
+, libsoup
 , libsoup_3
 , libpulseaudio
 , libintl
@@ -68,7 +69,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    # dlopen libsoup_3 with an absolute path
+    # dlopen libsoup_3 with an absolute path. Darwin needs an absolute path for libsoup as well.
     (substituteAll {
       src = ./souploader.diff;
       nixLibSoup3Path = "${lib.getLib libsoup_3}/lib";
