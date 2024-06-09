@@ -21,10 +21,10 @@ index 711b38a2a9..67a789f664 100644
        c_args: [adaptive_args, soup_link_args],
        dependencies: [adaptive_deps, soup_link_deps],
 diff --git a/ext/soup/gstsouploader.c b/ext/soup/gstsouploader.c
-index 9192e4dac5..6d5081e68b 100644
+index 9192e4dac5..6522588422 100644
 --- a/ext/soup/gstsouploader.c
 +++ b/ext/soup/gstsouploader.c
-@@ -34,12 +34,17 @@ GST_DEBUG_CATEGORY (gst_soup_debug);
+@@ -34,12 +34,18 @@ GST_DEBUG_CATEGORY (gst_soup_debug);
  
  #ifndef LINK_SOUP
  
@@ -37,6 +37,7 @@ index 9192e4dac5..6d5081e68b 100644
 +#if defined(__APPLE__)
 +#define LIBSOUP_3_SONAME "libsoup-3.0.0.dylib"
 +#define LIBSOUP_2_SONAME "libsoup-2.4.1.dylib"
++#define LIBSOUP_COMMON_SYMBOL "soup_get_major_version"
 +#else
  #define LIBSOUP_3_SONAME "libsoup-3.0.so.0"
  #define LIBSOUP_2_SONAME "libsoup-2.4.so.1"
@@ -44,7 +45,7 @@ index 9192e4dac5..6d5081e68b 100644
  
  #define LOAD_SYMBOL(name) G_STMT_START {                                \
      if (!g_module_symbol (module, G_STRINGIFY (name), (gpointer *) &G_PASTE (vtable->_, name))) { \
-@@ -156,7 +161,45 @@ gst_soup_load_library (void)
+@@ -156,7 +162,46 @@ gst_soup_load_library (void)
    GST_DEBUG_CATEGORY_INIT (gst_soup_debug, "soup", 0, "soup");
  #endif
  
@@ -60,14 +61,15 @@ index 9192e4dac5..6d5081e68b 100644
 +    Dl_info info;
 +
 +    GModule* module = g_module_open (NULL, 0);
-+    if (g_module_symbol (module, "soup_uri_new", &func) && dladdr (func, &info) && info.dli_sname) {
++    if (g_module_symbol (module, LIBSOUP_COMMON_SYMBOL, &func)
++        && dladdr (func, &info) && info.dli_sname) {
 +      libsoup_path = g_strndup(info.dli_fname, PATH_MAX - 1);
 +      g_autofree gchar* image_name = g_path_get_basename (libsoup_path);
 +
 +      /* Make sure `libsoup_path` points to a dylib that actually exists and
 +       * contains the libsoup symbol that was queried. */
 +      gpointer handle = dlopen (libsoup_path, RTLD_NOW | RTLD_NOLOAD);
-+      gboolean has_symbol = dlsym (handle, "soup_uri_new") != NULL;
++      gboolean has_symbol = dlsym (handle, LIBSOUP_COMMON_SYMBOL) != NULL;
 +      if (handle && has_symbol && g_str_equal (image_name, LIBSOUP_3_SONAME)) {
 +        libsoup_sonames[0] = libsoup_path;
 +        GST_DEBUG ("LibSoup 3 found");
@@ -91,7 +93,7 @@ index 9192e4dac5..6d5081e68b 100644
    {
      gpointer handle = NULL;
  
-@@ -171,7 +214,7 @@ gst_soup_load_library (void)
+@@ -171,7 +216,7 @@ gst_soup_load_library (void)
        GST_DEBUG ("LibSoup 2 found");
      } else {
        GST_DEBUG ("Trying all libsoups");
