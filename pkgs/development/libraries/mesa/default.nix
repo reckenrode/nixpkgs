@@ -270,6 +270,8 @@ self = stdenv.mkDerivation {
     (lib.mesonEnable "gallium-va" false)
     (lib.mesonEnable "gallium-xa" false)
     (lib.mesonEnable "lmsensors" false)
+    # Don’t build with glvnd support to make sure Mesa builds libGL on Darwin
+    (lib.mesonEnable "glvnd" false)
   ] ++ lib.optionals enableOpenCL [
     # Clover, old OpenCL frontend
     (lib.mesonOption "gallium-opencl" "icd")
@@ -519,7 +521,7 @@ self = stdenv.mkDerivation {
   meta = {
     description = "An open source 3D graphics library";
     longDescription = ''
-      The Mesa project began as an open-source implementation of the OpenGL
+      The Mesa project began as an open-source implementation of the OpenGLz
       specification - a system for rendering interactive 3D graphics. Over the
       years the project has grown to implement more graphics APIs, including
       OpenGL ES (versions 1, 2, 3), OpenCL, OpenMAX, VDPAU, VA API, XvMC, and
