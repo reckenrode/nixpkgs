@@ -4,6 +4,7 @@
 , fetchurl
 , libiconv
 , stdenv
+, xz
 , updateAutotoolsGnuConfigScriptsHook
 
 , enableCoreServices ? stdenv.isDarwin
@@ -79,7 +80,11 @@ stdenv.mkDerivation (finalAttrs: ({
     sed -i "s/@GNULIB_CLOSE@/1/" */*/unistd.in.h
   '';
 
-  nativeBuildInputs = [ updateAutotoolsGnuConfigScriptsHook ];
+  nativeBuildInputs = [
+    updateAutotoolsGnuConfigScriptsHook
+    xz
+    (lib.getBin xz)
+  ];
 
   buildInputs = lib.optionals (!stdenv.hostPlatform.isMinGW) [
     bash
