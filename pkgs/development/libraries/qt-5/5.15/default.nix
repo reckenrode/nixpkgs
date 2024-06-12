@@ -12,7 +12,7 @@ Check for any minor version changes.
 , bison, cups ? null, harfbuzz, libGL, perl, python3
 , gstreamer, gst-plugins-base, gtk3, dconf
 , llvmPackages_15, overrideSDK, overrideLibcxx
-, darwin
+, cctools, darwin
 
   # options
 , developerBuild ? false
