@@ -34,14 +34,14 @@ buildNodejs {
     # Fixes return address signing when cross-compiling to aarch64
     (fetchpatch2 {
       url = "https://github.com/nodejs/node/commit/39916bf4f320d536aece3f0f9fe215f8cf03cbc7.patch";
-      hash = "sha256-wlqFf3HFztn0oZSBJooPKfJL6kXNIn2swGHW97v30Es=";
+      hash = "sha256-fLLZ2iOHX975PhpAQ76UdLcSNPY28OFhcoQnOywL4FQ=";
     })
     # Remove unused `fdopen` in vendored zlib, which causes compilation failures with clang 18 on Darwin.
-    (fetchpatch {
+    (fetchpatch2 {
       url = "https://github.com/madler/zlib/commit/4bd9a71f3539b5ce47f0c67ab5e01f3196dc8ef9.patch";
       extraPrefix = "deps/v8/third_party/zlib/";
       stripLen = 1;
-      hash = "sha256-BXym9kB/Ezk6xtfvLAb/Okm/P696IwtffpgvRKQvUeM=";
+      hash = "sha256-SdSZyISS6mfRoOZbbc9YK5H3TUg2pQqtn4bBpEjnku8=";
     })
   ];
 }
