@@ -77,7 +77,7 @@ let
     let
       cc = if prevStage.llvmPackages.clang-unwrapped == null
            then null else
-           lib.makeOverridable (import ../../build-support/cc-wrapper) {
+           prevStage.wrapCCWith {
         name = "${name}-clang-wrapper";
 
         nativeTools = false;
@@ -1135,7 +1135,7 @@ in
         let
           tools = super.llvmPackages.tools.extend (_: _: {
             inherit (prevStage.llvmPackages) clang-unwrapped libclang libllvm llvm;
-            libcxxClang = lib.makeOverridable (import ../../build-support/cc-wrapper) {
+            libcxxClang = prevStage.wrapCCWith {
               nativeTools = false;
               nativeLibc = false;
 
@@ -1356,7 +1356,7 @@ in
         inherit (prevStage)
           bash brotli bzip2 coreutils cpio diffutils ed file findutils
           gmp gnugrep gnumake gnused gzip icu libffi libiconv libiconv-darwin
-          libidn2 libssh2 libunistring libxml2 libyaml ncurses nghttp2 openbsm openpam
+          libidn2 libssh2 libunistring libxml2 libyaml ncurses openbsm openpam
           openssl patch pbzx pcre python3Minimal xar xz zlib zstd;
 
         darwin = super.darwin.overrideScope (_: superDarwin: {
