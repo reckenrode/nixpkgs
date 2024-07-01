@@ -294,7 +294,7 @@ index fed4a92..3842f2c 100644
  	virtual void							setScope(Scope)					{ }
 -	virtual ld::Fixup::iterator				fixupsBegin() const				{ return (ld::Fixup*)&_fixup1; }
 -	virtual ld::Fixup::iterator				fixupsEnd()	const				{ return &((ld::Fixup*)&_fixup1)[1]; }
-+	virtual ld::Fixup::iterator				fixupsBegin() const				{ return const_cast<ld::Fixup*>(const_cast<ld::Fixup*>(&_fixup1)); }
++	virtual ld::Fixup::iterator				fixupsBegin() const				{ return const_cast<ld::Fixup*>(&_fixup1); }
 +	virtual ld::Fixup::iterator				fixupsEnd()	const				{ return const_cast<ld::Fixup*>(&_fixup1 + 1); }
  
  private:
@@ -309,7 +309,7 @@ index be91432..94f4d73 100644
  	virtual void						copyRawContent(uint8_t buffer[]) const { }
 -	virtual ld::Fixup::iterator			fixupsBegin() const	{ return &((ld::Fixup*)&_fixup)[0]; }
 -	virtual ld::Fixup::iterator			fixupsEnd()	const	{ return &((ld::Fixup*)&_fixup)[1]; }
-+    virtual ld::Fixup::iterator			fixupsBegin() const	{ return const_cast<ld::Fixup*>(&_fixup); }
++	virtual ld::Fixup::iterator			fixupsBegin() const	{ return const_cast<ld::Fixup*>(&_fixup); }
 +	virtual ld::Fixup::iterator			fixupsEnd()	const	{ return const_cast<ld::Fixup*>(&_fixup + 1); }
  
  private:
