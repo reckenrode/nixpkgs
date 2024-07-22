@@ -7,6 +7,9 @@
 let
   forceLibgccToBuildCrtStuff =
     import ./libgcc-buildstuff.nix { inherit lib stdenv; };
+
+  # todo(@reckenrode) This is ugly, but it avoid rebuilds on Darwin and Linux. Remove after the current staging-next cycle.
+  enableDarwinFixesForStagingNext = stdenv.buildPlatform.isDarwin && stdenv.buildPlatform.isx86_64;
 in
 
 originalAttrs: (stdenv.mkDerivation (finalAttrs: originalAttrs // {
@@ -21,14 +24,18 @@ originalAttrs: (stdenv.mkDerivation (finalAttrs: originalAttrs // {
     if test "$staticCompiler" = "1"; then
         EXTRA_LDFLAGS="-static"
     ${
-      # todo(@reckenrode) This is ugly, but it avoid rebuilds on Linux. Remove after the current staging-next cycle.
-      lib.optionalString stdenv.buildPlatform.isDarwin ''
-    elif test "$NIX_DONT_SET_RPATH" != "1"; then
-    ''}    EXTRA_LDFLAGS="-Wl,-rpath,''${!outputLib}/lib"
+      if enableDarwinFixesForStagingNext then
+        "elif test \"\${NIX_DONT_SET_RPATH-}\" != \"1\"; then"
+      else
+        "else"
+    }
+        EXTRA_LDFLAGS="-Wl,-rpath,''${!outputLib}/lib"
     ${
-      lib.optionalString stdenv.buildPlatform.isDarwin ''
-    else
-    ''}    EXTRA_LDFLAGS=""
+      if enableDarwinFixesForStagingNext then
+        "else\n    EXTRA_LDFLAGS=\"\""
+      else
+        "EXTRA_LDFLAGS=\"\""
+    }
     fi
 
     # GCC interprets empty paths as ".", which we don't want.
@@ -63,13 +70,25 @@ originalAttrs: (stdenv.mkDerivation (finalAttrs: originalAttrs // {
                 extraLDFlags=("-L/usr/lib64" "-L/usr/lib")
                 libc_libdir="/usr/lib"
             fi
-            extraLDFlags=("-L$libc_libdir")
-            nixDontSetRpathVar=NIX_DONT_SET_RPATH''${post}
-            if test "''${!nixDontSetRpathVar}" != "1"; then
-                extraLDFlags+=("-rpath" "$libc_libdir")
-            fi
-            extraLDFlags+=("''${extraLDFlags[@]}")
-            for i in "''${extraLDFlags[@]}"; do
+            ${
+              if enableDarwinFixesForStagingNext then
+                ''
+                  extraLDFlags=("-L$libc_libdir")
+                  nixDontSetRpathVar=NIX_DONT_SET_RPATH''${post}
+                  if test "''${!nixDontSetRpathVar-}" != "1"; then
+                      extraLDFlags+=("-rpath" "$libc_libdir")
+                  fi
+                  extraLDFlags+=("''${extraLDFlags[@]}")
+                  }
+                ''
+              else
+                ''
+                  extraLDFlags=("-L$libc_libdir" "-rpath" "$libc_libdir"
+                                        "''${extraLDFlags[@]}")
+                ''
+# The strange indentation with the next line is to ensure the string renders the same when the condition is false,
+# which is necessary to prevent rebuilds in staging-next.
+}        for i in "''${extraLDFlags[@]}"; do
                 declare -g EXTRA_LDFLAGS''${post}+=" -Wl,$i"
             done
         done
