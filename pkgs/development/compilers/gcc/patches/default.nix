@@ -156,8 +156,8 @@ in
   }) ];
   "12" = [ (fetchurl {
     name = "gcc-12-darwin-aarch64-support.patch";
-    url = "https://raw.githubusercontent.com/Homebrew/formula-patches/f1188b90d610e2ed170b22512ff7435ba5c891e2/gcc/gcc-12.3.0.diff";
-    sha256 = "sha256-naL5ZNiurqfDBiPSU8PTbTmLqj25B+vjjiqc4fAFgYs=";
+    url = "https://raw.githubusercontent.com/Homebrew/formula-patches/1ed9eaea059f1677d27382c62f21462b476b37fe/gcc/gcc-12.4.0.diff";
+    sha256 = "sha256-wOjpT79lps4TKG5/E761odhLGCphBIkCbOPiQg/D1Fw=";
   }) ];
   "11" = [ (fetchpatch {
     # There are no upstream release tags in https://github.com/iains/gcc-11-branch.
