@@ -1,0 +1,13 @@
+diff --git a/swift/include/swift/AST/ASTBridging.h b/swift/include/swift/AST/ASTBridging.h
+index b2ec466bbe..38bcbf690f 100644
+--- a/swift/include/swift/AST/ASTBridging.h
++++ b/swift/include/swift/AST/ASTBridging.h
+@@ -24,6 +24,8 @@
+ #ifdef USED_IN_CPP_SOURCE
+ #include "swift/AST/Attr.h"
+ #include "swift/AST/Decl.h"
++#include "clang/AST/DeclLookups.h"
++#include "clang/AST/DependentDiagnostic.h"
+ #endif
+ 
+ SWIFT_BEGIN_NULLABILITY_ANNOTATIONS

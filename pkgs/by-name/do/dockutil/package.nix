@@ -3,20 +3,20 @@
   stdenv,
   stdenvNoCC,
   fetchFromGitHub,
+  fetchSwiftPMDeps,
   fetchurl,
-  swift,
-  swiftpm,
-  swiftpm2nix,
-  swiftPackages,
+#  swift,
+#  swiftpm,
+  swiftPackages_5,
   libarchive,
   p7zip,
   # Building from source on x86_64 fails (among other things) due to:
   # error: cannot load underlying module for 'Darwin'
-  fromSource ? (stdenv.system != "x86_64-darwin"),
+  fromSource ? true,
 }:
 
 let
-  generated = swiftpm2nix.helpers ./generated;
+  inherit (swiftPackages_5) swift swiftpmHook;
 
   pname = "dockutil";
   version = "3.1.3";
@@ -30,7 +30,7 @@ let
     platforms = platforms.darwin;
   };
 
-  buildFromSource = swiftPackages.stdenv.mkDerivation (finalAttrs: {
+  buildFromSource = stdenv.mkDerivation (finalAttrs: {
     inherit pname version meta;
 
     src = fetchFromGitHub {
@@ -40,28 +40,15 @@ let
       hash = "sha256-mmk4vVZhq4kt05nI/dDM1676FDWyf4wTSwY2YzqKsLU=";
     };
 
-    postPatch = ''
-      # Patch sources so that they build with Swift CoreFoundation
-      # which differs ever so slightly from Apple's implementation.
-      substituteInPlace Sources/DockUtil/DockUtil.swift \
-        --replace-fail "URL(filePath:" \
-                       "URL(fileURLWithPath:" \
-        --replace-fail "path(percentEncoded: false)" \
-                       "path"
-    '';
+    swiftpmDeps = fetchSwiftPMDeps {
+      inherit (finalAttrs) pname version src;
+      hash = "sha256-WPI42HrrLXZLdXB8rCnv3ZbmtzhPmiQPRjpX9gx8V9Y=";
+    };
 
     nativeBuildInputs = [
       swift
-      swiftpm
+      swiftpmHook
     ];
-
-    configurePhase = generated.configure;
-
-    installPhase = ''
-      runHook preInstall
-      install -Dm755 .build/${stdenv.hostPlatform.darwinArch}-apple-macosx/release/dockutil -t $out/bin
-      runHook postInstall
-    '';
   });
 
   installBinary = stdenvNoCC.mkDerivation (finalAttrs: {

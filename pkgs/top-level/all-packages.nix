@@ -5769,7 +5769,7 @@ with pkgs;
   libllvm = llvmPackages.libllvm;
   llvm-manpages = llvmPackages.llvm-manpages;
 
-  llvmPackages = llvmPackages_19;
+  llvmPackages = llvmPackages_20;
 
   inherit
     (rec {
@@ -6034,7 +6034,14 @@ with pkgs;
     ];
   };
 
-  swiftPackages = recurseIntoAttrs (callPackage ../development/compilers/swift { });
+  fetchSwiftPMDeps = callPackage ../build-support/swift/fetch-swiftpm-deps { };
+
+  swiftPackageSets = recurseIntoAttrs (callPackage ../development/compilers/swift { });
+  swiftPackages_5 = swiftPackageSets."5"; # Provided for bootstrapping Swift 6, which requires a host Swift compiler.
+  swiftPackages_6 = swiftPackageSets."6";
+
+  swiftPackages = swiftPackages_6;
+
   inherit (swiftPackages)
     swift
     swiftpm
@@ -9746,9 +9753,6 @@ with pkgs;
 
   ### DEVELOPMENT / LIBRARIES / DARWIN SDKS
 
-  apple-sdk_11 = callPackage ../by-name/ap/apple-sdk/package.nix { darwinSdkMajorVersion = "11"; };
-  apple-sdk_12 = callPackage ../by-name/ap/apple-sdk/package.nix { darwinSdkMajorVersion = "12"; };
-  apple-sdk_13 = callPackage ../by-name/ap/apple-sdk/package.nix { darwinSdkMajorVersion = "13"; };
   apple-sdk_14 = callPackage ../by-name/ap/apple-sdk/package.nix { darwinSdkMajorVersion = "14"; };
   apple-sdk_15 = callPackage ../by-name/ap/apple-sdk/package.nix { darwinSdkMajorVersion = "15"; };
 
@@ -13194,9 +13198,7 @@ with pkgs;
     // (config.mplayer or { })
   );
 
-  mpv-unwrapped = callPackage ../applications/video/mpv {
-    stdenv = if stdenv.hostPlatform.isDarwin then swiftPackages.stdenv else stdenv;
-  };
+  mpv-unwrapped = callPackage ../applications/video/mpv { };
 
   # Wrap avoiding rebuild
   mpv = mpv-unwrapped.wrapper { mpv = mpv-unwrapped; };

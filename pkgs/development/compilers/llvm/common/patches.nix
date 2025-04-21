@@ -107,6 +107,12 @@
       path = ../15;
     }
   ];
+  "llvm/module-cache.patch" = [
+    {
+      after = "16";
+      path = ../16;
+    }
+  ];
   "libunwind/gnu-install-dirs.patch" = [
     {
       before = "17";

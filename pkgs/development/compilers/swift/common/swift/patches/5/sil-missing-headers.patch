@@ -1,0 +1,13 @@
+diff --git a/swift/include/swift/SIL/SILBridging.h b/swift/include/swift/SIL/SILBridging.h
+index f7492f25592..f0240884e0e 100644
+--- a/swift/include/swift/SIL/SILBridging.h
++++ b/swift/include/swift/SIL/SILBridging.h
+@@ -28,6 +28,8 @@
+ #include "swift/SIL/SILModule.h"
+ #include "swift/SIL/SILVTable.h"
+ #include "swift/SIL/SILWitnessTable.h"
++#include "clang/AST/DeclLookups.h"
++#include "clang/AST/DependentDiagnostic.h"
+ #include <stdbool.h>
+ #include <stddef.h>
+ #include <string>

@@ -6,7 +6,7 @@
   nixos,
   testers,
   versionCheckHook,
-  hello,
+  hello, libtapi
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -29,7 +29,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   doInstallCheck = true;
   nativeInstallCheckInputs = [
-    versionCheckHook
+    versionCheckHook libtapi
   ];
 
   # Give hello some install checks for testing purpose.

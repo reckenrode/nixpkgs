@@ -1,0 +1,19 @@
+diff --git a/Sources/PackageModel/UserToolchain.swift b/Sources/PackageModel/UserToolchain.swift
+index 392313c401..13e9a71fb5 100644
+--- a/Sources/PackageModel/UserToolchain.swift
++++ b/Sources/PackageModel/UserToolchain.swift
+@@ -706,6 +706,14 @@
+             }
+         }
+ 
++        // The manifest and plugin paths should be in the store if they’re nowhere else.
++        if let storeLibraryPath = try? AbsolutePath(validating: "@out@/lib/swift/pm") {
++            return .init(
++                manifestLibraryPath: storeLibraryPath.appending("ManifestAPI"),
++                pluginLibraryPath: storeLibraryPath.appending("PluginAPI")
++            )
++        }
++
+         // we are using a SwiftPM outside a toolchain, use the compiler path to compute the location
+         return .init(swiftCompilerPath: swiftCompilerPath)
+     }

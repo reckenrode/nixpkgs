@@ -1,0 +1,13 @@
+diff --git a/tools/sancov/sancov.cpp b/tools/sancov/sancov.cpp
+index 9d29e9a133..4cd916b5e8 100644
+--- a/tools/sancov/sancov.cpp
++++ b/tools/sancov/sancov.cpp
+@@ -518,7 +518,7 @@
+   static std::unique_ptr<SpecialCaseList> createUserIgnorelist() {
+     if (ClIgnorelist.empty())
+       return std::unique_ptr<SpecialCaseList>();
+-    return SpecialCaseList::createOrDie({{ClIgnorelist}},
++    return SpecialCaseList::createOrDie({{std::string(ClIgnorelist)}},
+                                         *vfs::getRealFileSystem());
+   }
+   std::unique_ptr<SpecialCaseList> DefaultIgnorelist;

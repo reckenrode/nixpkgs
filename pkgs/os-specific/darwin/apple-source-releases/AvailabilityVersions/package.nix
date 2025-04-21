@@ -65,6 +65,7 @@ mkAppleDerivation (finalAttrs: {
       Availability.h
       AvailabilityInternal.h
       AvailabilityInternalLegacy.h
+      AvailabilityInternalPrivate.h
       AvailabilityMacros.h
       AvailabilityVersions.h
       os/availability.h

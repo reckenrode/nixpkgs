@@ -1,0 +1,118 @@
+{
+  "5.10.1": {
+    "llvm": {
+      "owner": "swiftlang",
+      "repo": "llvm-project",
+      "version": "16.0.0+swift-5.10.1",
+      "hash": "sha256-D+zZjLgnAFy6zBuUQwRI0VmDrgr2TQeNUnDbDtvtRZ4="
+    },
+    "sourcekit-lsp": {
+      "owner": "swiftlang",
+      "repo": "sourcekit-lsp",
+      "hash": "sha256-+FN3n+Zo4u0BqXsermSA6u1IEddnluo/VZ9oud6w4O8=",
+      "deps-hash": ""
+    },
+    "swift": {
+      "owner": "swiftlang",
+      "repo": "swift",
+      "hash": "sha256-UK8yPwHu/sCvcuKKmBMCP9rGRJCZE3ct0ckdNw2BVbE="
+    },
+    "swift-docc": {
+      "owner": "swiftlang",
+      "repo": "swift-docc",
+      "hash": "sha256-zgGahAanYI95nQZ+3zAYrs0h4APNamPrZfwF81k1si0=",
+      "deps-hash": ""
+    },
+    "swift-driver": {
+      "owner": "swiftlang",
+      "repo": "swift-driver",
+      "hash": "sha256-Fs8h8jEtVfWVMqy+H/+03M/6QCWgfl+Tu/I9w/QDQKU=",
+      "deps-hash": "sha256-tZ7WAsMjeJHIkjx2KzkBIi/UPQTttXlD/oWD1w12lFc="
+    },
+    "swift-experimental-string-processing": {
+      "owner": "swiftlang",
+      "repo": "swift-experimental-string-processing",
+      "hash": "sha256-gv3xY9s6gdv0lpXH8RGfiLAvZWM7xVsUSLcqyb4rSeQ="
+    },
+    "swift-format": {
+      "owner": "swiftlang",
+      "repo": "swift-format",
+      "hash": "sha256-LFyNxA7Bb53/+3TxdNNC4xmoo84Mgvm8cBcWnHVUlkw=",
+      "deps-hash": ""
+    },
+    "swift-syntax": {
+      "owner": "swiftlang",
+      "repo": "swift-syntax",
+      "hash": "sha256-OcrOdlnLYpMxH5CGWNGbs5XW3gJaGgKWQqB9YtwmZeY="
+    },
+    "swiftpm": {
+      "owner": "swiftlang",
+      "repo": "swift-package-manager",
+      "hash": "sha256-WHwurDSnwP8vf70N/2MEhix7mi8Xg5fKJLdj9omfC4o=",
+      "deps-hash": "sha256-YjyvZn1R85LLu7WYn6GpRPCaSoGqmeKC6yRn9HnZ96g="
+    },
+    "xctest": {
+      "owner": "swiftlang",
+      "repo": "swift-corelibs-xctest",
+      "hash": "sha256-HgnVFYUuefCZKsOjXgt98ebMsLdMl0oXFXy2Pb2iUdw="
+    }
+  },
+  "6.1.1": {
+    "llvm": {
+      "owner": "swiftlang",
+      "repo": "llvm-project",
+      "version": "19.1.4+swift-6.1.1",
+      "hash": "sha256-4DXifUpGijp1hiVEs5UgJT1TZB6F/KWucBLnn6cr/j4="
+    },
+    "sourcekit-lsp": {
+      "owner": "swiftlang",
+      "repo": "sourcekit-lsp",
+      "hash": "",
+      "deps-hash": ""
+    },
+    "swift": {
+      "owner": "swiftlang",
+      "repo": "swift",
+      "hash": "sha256-oIptuGUf1qyIhqPOQGDwIrH0f4Sdu2udWZTuZBGzCIo="
+    },
+    "swift-docc": {
+      "owner": "swiftlang",
+      "repo": "swift-docc",
+      "hash": "",
+      "deps-hash": ""
+    },
+    "swift-driver": {
+      "owner": "swiftlang",
+      "repo": "swift-driver",
+      "hash": "sha256-o8eVhdRXSVXMqnNK3WLCDo+Sck2MGcuSem0lGWJSh3o=",
+      "deps-hash": "sha256-d+naAUJm1IEMspZK4KNpT3oH4lJpC9c8cTbGX1QxFkg="
+    },
+    "swift-experimental-string-processing": {
+      "owner": "swiftlang",
+      "repo": "swift-experimental-string-processing",
+      "hash": "sha256-2AVYoUeP2bobkOV2UTu6pBgAybPxv1Yfn9R1f3Jpodo="
+    },
+    "swift-format": {
+      "owner": "swiftlang",
+      "repo": "swift-format",
+      "hash": "sha256-F5DGhJ0Vocng53pNyv5OEbUkm+/55OvcVtUQnvzgBvc=",
+      "deps-hash": "sha256-BW42j0i056ZLKcI4rTSl0aKMGCwb5M0ApmM+m4tK6nk="
+    },
+    "swift-syntax": {
+      "owner": "swiftlang",
+      "repo": "swift-syntax",
+      "hash": "sha256-GaC1h89UYStAFeNXJ+nBFxPwF/No7L4Vpw0NmrGTCb8="
+    },
+    "swiftpm": {
+      "owner": "swiftlang",
+      "repo": "swift-package-manager",
+      "hash": "sha256-/yWkbXv/pe1wQxYKou6n9SfrxTiBxUVxkzNMN49vvcM=",
+      "deps-hash": "sha256-NjDBghjkKrJtoCciZDAqRqkRRRZqg2s34EeQBJsUhu0="
+    },
+    "xctest": {
+      "owner": "swiftlang",
+      "repo": "swift-corelibs-xctest",
+      "hash": "sha256-F3hIsMhwzMhhSyOqxaTf2x6oXOotQEJ2TmD/t6cZ9Us="
+    }
+  }
+}

@@ -45,6 +45,12 @@ let
   # LLVM rebuild, but overriding doesn’t work when building libc++, libc++abi,
   # and libunwind. It also wants to disable LTO in the first rebuild.
   isDarwinBootstrap = lib.getName stdenv == "bootstrap-stage-xclang-stdenv-darwin";
+
+  swift_version =
+    let
+      parsed = lib.splitString "-" release_version;
+    in
+    if lib.length parsed == 2 then lib.elemAt parsed 1 else null;
 in
 
 stdenv.mkDerivation (
@@ -294,7 +300,22 @@ stdenv.mkDerivation (
       ++
         lib.optional (lib.versionAtLeast release_version "15")
           # Just like the `llvm-lit-cfg` patch, but for `polly`.
-          (getVersionFile "llvm/polly-lit-cfg-add-libs-to-dylib-path.patch");
+          (getVersionFile "llvm/polly-lit-cfg-add-libs-to-dylib-path.patch")
+      ++ lib.optionals (swift_version != null) (
+        [
+          # Make sure LLVM create create the module cache when building in nixpkgs and there is no home.
+          # Otherwise, this can cause Clang to crash when building C++ interop for Swift.
+          (getVersionFile "llvm/module-cache.patch")
+        ] ++ lib.optionals stdenv.hostPlatform.isLinux [
+          # Swift on Linux fails to build with `CommandLine Error: Option '<option>' registered more than once!`
+          # Disable the sanity check because it’s not clear what Swift is doing wrong to cause this.
+          ./commandline-crimes.patch
+        ]
+        ++ lib.optionals (lib.versionOlder release_version "19") [
+          # Fixes `error: chosen constructor is explicit in copy-initialization` when using newer versions of libc++.
+          (getVersionFile "llvm/sancov-libc++-compat.patch")
+        ]
+      );
 
     nativeBuildInputs =
       [
@@ -346,7 +367,10 @@ stdenv.mkDerivation (
               # This test tries to call `sw_vers` by absolute path (`/usr/bin/sw_vers`)
               # and thus fails under the sandbox:
               (
-                if lib.versionAtLeast release_version "16" then
+                if
+                  lib.versionAtLeast release_version "16"
+                  && (swift_version == null || lib.versionAtLeast swift_version "6")
+                then
                   ''
                     substituteInPlace unittests/TargetParser/Host.cpp \
                       --replace-fail '/usr/bin/sw_vers' "${(builtins.toString darwin.DarwinTools) + "/bin/sw_vers"}"
@@ -716,10 +740,15 @@ stdenv.mkDerivation (
           ''
             cp NATIVE/bin/llvm-config $dev/bin/llvm-config-native
           ''
-      );
+      )
+      # Swift relies on LLVM’s private `config.h` for feature checks (e.g., for `unistd.h`).
+      + optionalString (swift_version != null) ''
+        cp include/llvm/Config/config.h "$dev/include/llvm/Config/config.h"
+      '';
 
     doCheck =
       !isDarwinBootstrap
+      && swift_version == null # The test suite fails to find `libLLVM.dylib`.
       && !stdenv.hostPlatform.isAarch32
       && (if lib.versionOlder release_version "15" then stdenv.hostPlatform.isLinux else true)
       && (

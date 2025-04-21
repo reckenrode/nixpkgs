@@ -1,0 +1,42 @@
+diff --git a/Sources/Build/BuildDescription/ProductBuildDescription.swift b/Sources/Build/BuildDescription/ProductBuildDescription.swift
+index 4a64ee91f..cd433325d 100644
+--- a/Sources/Build/BuildDescription/ProductBuildDescription.swift
++++ b/Sources/Build/BuildDescription/ProductBuildDescription.swift
+@@ -286,9 +286,8 @@ public final class ProductBuildDescription: SPMBuildCore.ProductBuildDescription
+             if useStdlibRpath, self.buildParameters.targetTriple.isMacOSX {
+                 let macOSSupportedPlatform = self.package.platforms.getDerived(for: .macOS, usingXCTest: product.isLinkingXCTest)
+                 if macOSSupportedPlatform.version.major < 12 {
+-                    let backDeployedStdlib = try buildParameters.toolchain.macosSwiftStdlib
+-                        .parentDirectory
+-                        .parentDirectory
++                    let backDeployedStdlib = try AbsolutePath(validating: "@swift-lib@")
++                        .appending("lib")
+                         .appending("swift-5.5")
+                         .appending("macosx")
+                     args += ["-Xlinker", "-rpath", "-Xlinker", backDeployedStdlib.pathString]
+diff --git a/Sources/SPMTestSupport/Toolchain.swift b/Sources/SPMTestSupport/Toolchain.swift
+index 92c13d774..4fcf094c4 100644
+--- a/Sources/SPMTestSupport/Toolchain.swift
++++ b/Sources/SPMTestSupport/Toolchain.swift
+@@ -70,7 +70,7 @@ extension UserToolchain {
+                     try localFileSystem.writeFileContents(inputPath, string: "public func foo() async {}\nTask { await foo() }")
+                     let outputPath = tmpPath.appending("foo")
+                     let toolchainPath = self.swiftCompilerPath.parentDirectory.parentDirectory
+-                    let backDeploymentLibPath = toolchainPath.appending(components: "lib", "swift-5.5", "macosx")
++                    let backDeploymentLibPath = try! AbsolutePath(validating: "@swift-lib@").appending(components: "lib", "swift-5.5", "macosx")
+                     try Process.checkNonZeroExit(arguments: ["/usr/bin/xcrun", "--toolchain", toolchainPath.pathString, "swiftc", inputPath.pathString, "-Xlinker", "-rpath", "-Xlinker", backDeploymentLibPath.pathString, "-o", outputPath.pathString])
+                     try Process.checkNonZeroExit(arguments: [outputPath.pathString])
+                 }
+diff --git a/Sources/Workspace/DefaultPluginScriptRunner.swift b/Sources/Workspace/DefaultPluginScriptRunner.swift
+index e5279b0c8..a18f3922f 100644
+--- a/Sources/Workspace/DefaultPluginScriptRunner.swift
++++ b/Sources/Workspace/DefaultPluginScriptRunner.swift
+@@ -169,7 +169,7 @@ public struct DefaultPluginScriptRunner: PluginScriptRunner, Cancellable {
+         }
+         else {
+             // Add an `-rpath` so the Swift 5.5 fallback libraries can be found.
+-            let swiftSupportLibPath = self.toolchain.swiftCompilerPathForManifests.parentDirectory.parentDirectory.appending(components: "lib", "swift-5.5", "macosx")
++            let swiftSupportLibPath = try! AbsolutePath(validating: "@swift-lib@").appending(components: "lib", "swift-5.5", "macosx")
+             commandLine += ["-Xlinker", "-rpath", "-Xlinker", swiftSupportLibPath.pathString]
+         }
+         #endif

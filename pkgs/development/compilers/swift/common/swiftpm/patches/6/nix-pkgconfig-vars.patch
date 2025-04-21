@@ -1,0 +1,33 @@
+Swift parses .pc files manually, but this means it bypasses our pkg-config
+wrapper. That wrapper normally takes care of introducing the correct
+PKG_CONFIG_PATH for cross compiling.
+
+diff --git a/Sources/PackageLoading/PkgConfig.swift b/Sources/PackageLoading/PkgConfig.swift
+index b98d01932d..02fcb3d6a7 100644
+--- a/Sources/PackageLoading/PkgConfig.swift
++++ b/Sources/PackageLoading/PkgConfig.swift
+@@ -129,14 +129,17 @@
+ 
+     private static var envSearchPaths: [AbsolutePath] {
+         get throws {
+-            if let configPath = Environment.current["PKG_CONFIG_PATH"] {
+-                #if os(Windows)
+-                return try configPath.split(separator: ";").map({ try AbsolutePath(validating: String($0)) })
+-                #else
+-                return try configPath.split(separator: ":").map({ try AbsolutePath(validating: String($0)) })
+-                #endif
++            var result: [AbsolutePath] = []
++            for envVar in ["PKG_CONFIG_PATH", "PKG_CONFIG_PATH_FOR_TARGET"] {
++                if let configPath = Environment.current[EnvironmentKey(envVar)] {
++                    #if os(Windows)
++                    result += try configPath.split(separator: ";").map({ try AbsolutePath(validating: String($0)) })
++                    #else
++                    result += try configPath.split(separator: ":").map({ try AbsolutePath(validating: String($0)) })
++                    #endif
++                }
+             }
+-            return []
++            return result
+         }
+     }
+ }

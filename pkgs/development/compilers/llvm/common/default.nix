@@ -115,8 +115,15 @@ let
     tools:
     let
       callPackage = newScope (tools // args // metadata);
+      swiftVersion =
+        let
+          parsed = lib.splitString "-" metadata.release_version;
+        in
+        if lib.length parsed == 2 then lib.elemAt parsed 1 else null;
       clangVersion =
-        if (lib.versionOlder metadata.release_version "16") then
+        if (swiftVersion != null && lib.versionOlder swiftVersion "6.0") then
+          lib.head (lib.splitString "+" metadata.release_version)
+        else if (lib.versionOlder metadata.release_version "16") then
           metadata.release_version
         else
           lib.versions.major metadata.release_version;

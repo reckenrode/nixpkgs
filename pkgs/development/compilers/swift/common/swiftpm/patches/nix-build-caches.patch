@@ -1,0 +1,24 @@
+diff --git a/Sources/Basics/FileSystem/FileSystem+Extensions.swift b/Sources/Basics/FileSystem/FileSystem+Extensions.swift
+index c03178d342..e32a13ada8 100644
+--- a/Sources/Basics/FileSystem/FileSystem+Extensions.swift
++++ b/Sources/Basics/FileSystem/FileSystem+Extensions.swift
+@@ -12,6 +12,7 @@
+ 
+ import struct Foundation.Data
+ import class Foundation.FileManager
++import class Foundation.ProcessInfo
+ import struct Foundation.UUID
+ import SystemPackage
+ 
+@@ -236,6 +237,11 @@
+     /// SwiftPM cache directory under user's caches directory (if exists)
+     public var swiftPMCacheDirectory: AbsolutePath {
+         get throws {
++            let env = ProcessInfo.processInfo.environment
++            // Set up the caches in the build environment for Nix-managed builds
++            if let nixBuildTop = env["NIX_BUILD_TOP"] {
++                return try! AbsolutePath(validating: nixBuildTop).appending("swiftpm-cache")
++            }
+             if let path = self.idiomaticUserCacheDirectory {
+                 return path.appending("org.swift.swiftpm")
+             } else {

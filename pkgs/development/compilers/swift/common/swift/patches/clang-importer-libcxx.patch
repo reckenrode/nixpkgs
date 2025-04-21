@@ -1,0 +1,35 @@
+diff --git a/swift/lib/ClangImporter/ClangImporter.cpp b/swift/lib/ClangImporter/ClangImporter.cpp
+index 49cc3bfbc1..2ab395e9cb 100644
+--- a/swift/lib/ClangImporter/ClangImporter.cpp
++++ b/swift/lib/ClangImporter/ClangImporter.cpp
+@@ -572,6 +572,30 @@
+   }
+ 
+   if (LangOpts.EnableCXXInterop) {
++    // Ensure the libc++ headers are available.
++    if (auto nixCC = ::getenv("NIX_CC")) {
++      llvm::BumpPtrAllocator allocator;
++      llvm::StringSaver saver(allocator);
++
++      // Treat `libcxx-cxxflags` as a response file for Clang. Because Clang
++      // expects response files to be expanded already at this point, it has
++      // to be expanded manually.
++      llvm::SmallString<256> path = StringRef(nixCC);
++      llvm::sys::path::append(path, "nix-support", "libcxx-cxxflags");
++      if (auto buffer = llvm::vfs::getRealFileSystem()->getBufferForFile(path)) {
++        auto contents = (*buffer)->getMemBufferRef().getBuffer();
++        llvm::SmallVector<const char*> args;
++#if _WIN32
++        llvm::cl::TokenizeWindowsCommandLineNoCopy(contents, saver, args);
++#else
++        llvm::cl::TokenizeGNUCommandLine(contents, saver, args);
++#endif
++        for (auto arg : args) {
++          invocationArgStrs.push_back(arg);
++        }
++      }
++    }
++
+     if (auto path = getCxxShimModuleMapPath(searchPathOpts, triple)) {
+       invocationArgStrs.push_back((Twine("-fmodule-map-file=") + *path).str());
+     }

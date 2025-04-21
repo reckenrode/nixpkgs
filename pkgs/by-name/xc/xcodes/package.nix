@@ -1,16 +1,15 @@
 {
   lib,
-  fetchFromGitHub,
-  swiftPackages,
-  swift,
-  swiftpm,
-  swiftpm2nix,
-  makeWrapper,
   aria2,
+  fetchFromGitHub,
+  fetchSwiftPMDeps,
+  makeWrapper,
+  stdenv,
+  swiftPackages_5,
 }:
+
 let
-  generated = swiftpm2nix.helpers ./generated;
-  stdenv = swiftPackages.stdenv;
+  inherit (swiftPackages_5) swift swiftpmHook;
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "xcodes";
@@ -19,27 +18,24 @@ stdenv.mkDerivation (finalAttrs: {
   src = fetchFromGitHub {
     owner = "XcodesOrg";
     repo = "xcodes";
-    rev = finalAttrs.version;
+    tag = finalAttrs.version;
     hash = "sha256-TwPfASRU98rifyA/mINFfoY0MbbwmAh8JneVpJa38CA=";
+  };
+
+  swiftpmDeps = fetchSwiftPMDeps {
+    inherit (finalAttrs) pname version src;
+    hash = "sha256-4z5a+Y6MuQDh80jbwONLWOebY7Z+YsxTNwLoZEyf4Ac=";
   };
 
   nativeBuildInputs = [
     swift
-    swiftpm
+    swiftpmHook
     makeWrapper
   ];
 
-  configurePhase = generated.configure;
-
-  installPhase = ''
-    runHook preInstall
-
-    binPath="$(swiftpmBinPath)"
-    install -D $binPath/xcodes $out/bin/xcodes
+  postInstall = ''
     wrapProgram $out/bin/xcodes \
       --prefix PATH : ${lib.makeBinPath [ aria2 ]}
-
-    runHook postInstall
   '';
 
   meta = {

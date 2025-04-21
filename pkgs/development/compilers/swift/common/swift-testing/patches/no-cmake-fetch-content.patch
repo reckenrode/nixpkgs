@@ -1,0 +1,14 @@
+diff --git a/Sources/TestingMacros/CMakeLists.txt b/Sources/TestingMacros/CMakeLists.txt
+index ad58fc3..f56d9b6 100644
+--- a/Sources/TestingMacros/CMakeLists.txt
++++ b/Sources/TestingMacros/CMakeLists.txt
+@@ -30,8 +30,7 @@ if(SwiftTesting_BuildMacrosAsExecutables)
+   include(FetchContent)
+   set(FETCHCONTENT_BASE_DIR ${CMAKE_BINARY_DIR}/_d)
+   FetchContent_Declare(SwiftSyntax
+-    GIT_REPOSITORY https://github.com/swiftlang/swift-syntax
+-    GIT_TAG 1cd35348b089ff8966588742c69727205d99f8ed) # 601.0.0-prerelease-2024-11-18
++    SOURCE_DIR @swift-syntax@)
+   FetchContent_MakeAvailable(SwiftSyntax)
+ endif()
+ 

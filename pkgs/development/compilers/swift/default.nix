@@ -1,106 +1,91 @@
 {
   lib,
-  pkgs,
-  newScope,
-  darwin,
+  buildPackages,
+  callPackage,
+  generateSplicesForMkScope,
   llvmPackages,
-  llvmPackages_15,
+  makeScopeWithSplicing',
   overrideCC,
-  overrideLibcxx,
+  pkgsBuildBuild,
+  stdenv,
+  wrapCC,
 }:
 
 let
-  swiftLlvmPackages = llvmPackages_15;
+  versions = lib.importJSON ./versions.json;
 
-  self = rec {
+  makeSwiftScope =
+    release_version:
+    makeScopeWithSplicing' {
+      otherSplices = generateSplicesForMkScope "swiftPackages_${lib.versions.major release_version}";
+      f =
+        self:
+        let
+          release_major = lib.versions.major release_version;
+        in
+        lib.packagesFromDirectoryRecursive {
+          callPackage = self.callPackage;
+          directory = ./common;
+        }
+        // {
+          inherit release_version;
+          bootSwift =
+            if !(lib.systems.equals stdenv.buildPlatform stdenv.hostPlatform) then
+              buildPackages.swiftPackages.swift
+            else if release_major == "5" then
+              self.swift.override {
+                bootSwift = null;
+                enableBuildingSwiftWithSwift = false;
+              }
+            else
+              self.swift.override {
+                bootSwift = pkgsBuildBuild.swiftPackageSets.${toString (lib.toInt release_major - 1)}.swift;
+                enableSwiftDriver = false;
+              };
 
-    callPackage = newScope self;
+          bootSwiftpm = self.swiftpm.override {
+            swift = self.bootSwift;
+            enableCmakeBuild = true;
+          };
 
-    # Swift builds its own Clang for internal use. We wrap that clang with a
-    # cc-wrapper derived from the clang configured below. Because cc-wrapper
-    # applies a specific resource-root, the two versions are best matched, or
-    # we'll often run into compilation errors.
-    #
-    # The following selects the correct Clang version, matching the version
-    # used in Swift.
-    inherit (swiftLlvmPackages) clang;
+          bootSwiftpmHook = self.swiftpmHook.override { swiftpm = self.bootSwiftpm; };
 
-    # Overrides that create a useful environment for swift packages, allowing
-    # packaging with `swiftPackages.callPackage`.
-    inherit (clang) bintools;
-    stdenv =
-      let
-        stdenv' = overrideCC pkgs.stdenv clang;
-      in
-      # Ensure that Swift’s internal clang uses the same libc++ and libc++abi as the
-      # default clang’s stdenv. Using the default libc++ avoids issues (such as crashes)
-      # that can happen when a Swift application dynamically links different versions
-      # of libc++ and libc++abi than libraries it links are using.
-      if stdenv'.cc.libcxx != null then
-        if pkgs.stdenv.hostPlatform.isDarwin && stdenv'.cc.libcxx == darwin.libcxx then
-          overrideCC stdenv' (
-            clang.override {
-              # Use the same system libc++ headers from the SDK required by Swift.
-              # This avoids issues where the clang version used to build Swift is too old for the libc++ headers.
-              libcxx = darwin.libcxx.override { apple-sdk = pkgs.apple-sdk_13; };
+          # Compiling Swift with GCC isn’t very well supported. It also tends to expect LLVM bintools.
+          stdenv =
+            if stdenv.cc.isGNU then
+              overrideCC llvmPackages.stdenv (
+                llvmPackages.stdenv.cc.override { bintools = llvmPackages.bintools; }
+              )
+            else
+              stdenv;
+
+          swift-driver = self.swift.driver;
+
+          # Apply defaults based on the Swift release, but use the values from `versions.json` if they exist.
+          version_src = lib.mapAttrs (
+            name: value:
+            value
+            // {
+              tag = value.tag or "swift-${release_version}-RELEASE";
+              version = value.version or release_version;
             }
-          )
-        else
-          overrideLibcxx stdenv'
-      else
-        stdenv';
-
-    swift-unwrapped = callPackage ./compiler {
-      inherit (darwin) DarwinTools sigtool;
+          ) versions.${self.release_version};
+        };
     };
 
-    swiftNoSwiftDriver = callPackage ./wrapper {
-      swift = swift-unwrapped;
-      useSwiftDriver = false;
-    };
-
-    Dispatch =
-      if stdenv.hostPlatform.isDarwin then
-        null # part of apple-sdk
-      else
-        callPackage ./libdispatch { swift = swiftNoSwiftDriver; };
-
-    Foundation =
-      if stdenv.hostPlatform.isDarwin then
-        null # part of apple-sdk
-      else
-        callPackage ./foundation { swift = swiftNoSwiftDriver; };
-
-    # TODO: Apple distributes a binary XCTest with Xcode, but it is not part of
-    # CLTools (or SUS), so would have to figure out how to fetch it. The binary
-    # version has several extra features, like a test runner and ObjC support.
-    XCTest = callPackage ./xctest {
-      inherit (darwin) DarwinTools;
-      swift = swiftNoSwiftDriver;
-    };
-
-    swiftpm = callPackage ./swiftpm {
-      inherit (darwin) DarwinTools;
-      swift = swiftNoSwiftDriver;
-    };
-
-    swift-driver = callPackage ./swift-driver {
-      swift = swiftNoSwiftDriver;
-    };
-
-    swift = callPackage ./wrapper {
-      swift = swift-unwrapped;
-    };
-
-    sourcekit-lsp = callPackage ./sourcekit-lsp { };
-
-    swift-docc = callPackage ./swift-docc { };
-
-    swift-format = callPackage ./swift-format { };
-
-    swiftpm2nix = callPackage ./swiftpm2nix { };
-
-  };
-
+  packageSets = lib.genAttrs (lib.attrNames versions) makeSwiftScope;
 in
-self
+lib.mapAttrs' (version: packageSet: {
+  name = lib.versions.major version;
+  value = lib.removeAttrs packageSet [
+    "bootSwift"
+    "bootSwiftpm"
+    "bootSwiftpmHook"
+    "callPackage"
+    "llvmPackages"
+    "newScope"
+    "packages"
+    "stdenv"
+    "version_src"
+  ];
+}) packageSets

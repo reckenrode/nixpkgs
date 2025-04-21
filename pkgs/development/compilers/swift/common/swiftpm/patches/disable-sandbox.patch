@@ -1,0 +1,37 @@
+Nix may already sandbox the build, in which case sandbox_apply will fail.
+
+diff --git a/Sources/Basics/Sandbox.swift b/Sources/Basics/Sandbox.swift
+index f8a32d4687..2ad5b9f537 100644
+--- a/Sources/Basics/Sandbox.swift
++++ b/Sources/Basics/Sandbox.swift
+@@ -57,18 +57,20 @@
+         allowNetworkConnections: [SandboxNetworkPermission] = []
+     ) throws -> [String] {
+         #if os(macOS)
+-        let profile = try macOSSandboxProfile(
+-            fileSystem: fileSystem,
+-            strictness: strictness,
+-            writableDirectories: writableDirectories,
+-            readOnlyDirectories: readOnlyDirectories,
+-            allowNetworkConnections: allowNetworkConnections
+-        )
+-        return ["/usr/bin/sandbox-exec", "-p", profile] + command
+-        #else
++        let env = ProcessInfo.processInfo.environment
++        if env["NIX_BUILD_TOP"] == nil || env["IN_NIX_SHELL"] != nil {
++            let profile = try macOSSandboxProfile(
++                fileSystem: fileSystem,
++                strictness: strictness,
++                writableDirectories: writableDirectories,
++                readOnlyDirectories: readOnlyDirectories,
++                allowNetworkConnections: allowNetworkConnections
++            )
++            return ["/usr/bin/sandbox-exec", "-p", profile] + command
++        }
++        #endif
+         // rdar://40235432, rdar://75636874 tracks implementing sandboxes for other platforms.
+         return command
+-        #endif
+     }
+ 
+     /// Basic strictness level of a sandbox applied to a command line.

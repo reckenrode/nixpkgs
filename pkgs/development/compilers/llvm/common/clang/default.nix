@@ -20,6 +20,15 @@
   getVersionFile,
   fetchpatch,
 }:
+
+let
+  swift_version =
+    let
+      parsed = lib.splitString "-" release_version;
+    in
+    if lib.length parsed == 2 then lib.elemAt parsed 1 else null;
+in
+
 stdenv.mkDerivation (
   finalAttrs:
   {
@@ -106,6 +115,7 @@ stdenv.mkDerivation (
           (
             lib.versionAtLeast (lib.versions.major release_version) "15"
             && lib.versionOlder (lib.versions.major release_version) "17"
+            && swift_version == null # The version of LLVM used to build Swift already has this patch.
           )
           (fetchpatch {
             name = "clang-darwin-An-OS-version-preprocessor-define.patch";
@@ -192,6 +202,15 @@ stdenv.mkDerivation (
       ''
       + lib.optionalString stdenv.hostPlatform.isMusl ''
         sed -i -e 's/lgcc_s/lgcc_eh/' lib/Driver/ToolChains/*.cpp
+      ''
+      + lib.optionalString (swift_version != null) ''
+        # Make sure clang-scan-deps.py is installed to Clang not LLVM’s bin output.
+        substituteInPlace tools/clang-scan-deps/CMakeLists.txt \
+          --replace-fail \''${LLVM_TOOLS_BINARY_DIR}/clang-deps-launcher.py \''${CLANG_BINARY_DIR}/clang-deps-launcher.py
+
+        # Install the IndexStore headers to $dev/include
+        substituteInPlace tools/IndexStore/CMakeLists.txt \
+          --replace-fail 'INDEXSTORE_HEADERS_INSTALL_DESTINATION "local/include"' 'INDEXSTORE_HEADERS_INSTALL_DESTINATION "include"'
       '';
 
     outputs = [

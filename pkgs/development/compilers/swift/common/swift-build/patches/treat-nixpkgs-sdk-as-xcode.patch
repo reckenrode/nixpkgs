@@ -1,0 +1,41 @@
+diff --git a/Sources/SWBCore/Core.swift b/Sources/SWBCore/Core.swift
+index 4864e81cd3..f2e9d9c2f1 100644
+--- a/Sources/SWBCore/Core.swift
++++ b/Sources/SWBCore/Core.swift
+@@ -71,7 +71,7 @@
+                         return nil
+                     case 1:
+                         let path = values[0]
+-                        if path.str.hasSuffix(".app/Contents/Developer") {
++                        if path.str.hasSuffix(".app/Contents/Developer") || path.str.hasPrefix("@store-dir@") {
+                             resolvedDeveloperPath = .xcode(path)
+                         } else {
+                             resolvedDeveloperPath = .fallback(values[0])
+@@ -275,11 +275,11 @@
+ 
+             switch developerPath {
+             case .xcode(let path):
+-                toolchainPaths.append((path.join("Toolchains"), strict: path.str.hasSuffix(".app/Contents/Developer")))
++                toolchainPaths.append((path.join("Toolchains"), strict: path.str.hasSuffix(".app/Contents/Developer") || path.str.hasPrefix("@store-dir@")))
+             case .swiftToolchain(let path, xcodeDeveloperPath: let xcodeDeveloperPath):
+                 toolchainPaths.append((path, strict: true))
+                 if let xcodeDeveloperPath {
+-                    toolchainPaths.append((xcodeDeveloperPath.join("Toolchains"), strict: xcodeDeveloperPath.str.hasSuffix(".app/Contents/Developer")))
++                    toolchainPaths.append((xcodeDeveloperPath.join("Toolchains"), strict: xcodeDeveloperPath.str.hasSuffix(".app/Contents/Developer") || path.str.hasPrefix("@store-dir@") ))
+                 }
+             case .fallback(let path):
+                 toolchainPaths.append((path.join("Toolchains"), strict: false))
+diff --git a/Sources/SWBTestSupport/SkippedTestSupport.swift b/Sources/SWBTestSupport/SkippedTestSupport.swift
+index 08ef7190eb..8a86e4739c 100644
+--- a/Sources/SWBTestSupport/SkippedTestSupport.swift
++++ b/Sources/SWBTestSupport/SkippedTestSupport.swift
+@@ -142,7 +142,8 @@
+     /// Constructs a condition trait that causes a test to be disabled if the developer directory is pointing at an Xcode developer directory.
+     package static var skipXcodeToolchain: Self {
+         disabled("This test is incompatible with Xcode toolchains.", {
+-            try await ConditionTraitContext.shared.getCore().developerPath.path.str.contains(".app/Contents/Developer")
++            let core = try await ConditionTraitContext.shared.getCore()
++            return core.developerPath.path.str.contains(".app/Contents/Developer") || core.developerPath.path.str.hasPrefix("@store-dir@")
+         })
+     }
+ 

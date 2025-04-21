@@ -1,0 +1,18 @@
+diff --git a/Sources/PackageModel/UserToolchain.swift b/Sources/PackageModel/UserToolchain.swift
+index 392313c401..49af3d96b3 100644
+--- a/Sources/PackageModel/UserToolchain.swift
++++ b/Sources/PackageModel/UserToolchain.swift
+@@ -293,13 +293,7 @@
+     }
+
+     public func _isClangCompilerVendorApple() throws -> Bool? {
+-        // Assume the vendor is Apple on macOS.
+-        // FIXME: This might not be the best way to determine this.
+-        #if os(macOS)
+-        return true
+-        #else
+         return false
+-        #endif
+     }
+
+     /// Returns the path to lldb.
