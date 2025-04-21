@@ -1,21 +1,23 @@
 {
   lib,
   stdenv,
-  callPackage,
   cmake,
+  fetchFromGitHub,
   ninja,
   useSwift ? true,
   swift,
 }:
 
-let
-  sources = callPackage ../sources.nix { };
-in
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "swift-corelibs-libdispatch";
+  version = "5.8";
 
-  inherit (sources) version;
-  src = sources.swift-corelibs-libdispatch;
+  src = fetchFromGitHub {
+    owner = "swiftlang";
+    repo = "swift-corelibs-libdispatch";
+    tag = "swift-${finalAttrs.version}-RELEASE";
+    hash = "sha256-XOAWuaGqWJtxhGIPXYT3PIvk5OK0rkY4g1IOybJUlm4=";
+  };
 
   outputs = [
     "out"
@@ -51,4 +53,4 @@ stdenv.mkDerivation {
     maintainers = with lib.maintainers; [ cmm ];
     teams = [ lib.teams.swift ];
   };
-}
+})

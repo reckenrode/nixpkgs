@@ -16598,7 +16598,14 @@ with pkgs;
 
   inherit (callPackage ../applications/misc/zettlr { }) zettlr;
 
-  swift-corelibs-libdispatch = swiftPackages.Dispatch;
+  swift-corelibs-libdispatch = callPackage ../by-name/sw/swift-corelibs-libdispatch/package.nix {
+    # libdispatch requires Clang extensions such as blocks.
+    stdenv =
+      if stdenv.cc.isGNU then
+        llvmPackages.stdenv
+      else
+        stdenv;
+  };
 
   aitrack = libsForQt5.callPackage ../applications/misc/aitrack { };
 
