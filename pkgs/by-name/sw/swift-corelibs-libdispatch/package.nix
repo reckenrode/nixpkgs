@@ -2,6 +2,7 @@
   lib,
   cmake,
   fetchFromGitHub,
+  lld,
   ninja,
   stdenv,
   swift,
@@ -31,12 +32,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [ (lib.cmakeBool "ENABLE_SWIFT" useSwift) ];
 
+  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isWindows "-fuse-ld=lld";
+
   nativeBuildInputs =
     [
       cmake
       ninja
     ]
-    ++ lib.optionals useSwift [ swift ];
+    ++ lib.optionals useSwift [ swift ]
+    ++ lib.optionals stdenv.hostPlatform.isWindows [ lld ];
 
   postInstall =
     ''
@@ -52,8 +56,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = {
     description = "Grand Central Dispatch";
-    platforms = lib.platforms.linux;
     homepage = "https://github.com/swiftlang/swift-corelibs-libdispatch";
+    platforms = lib.platforms.freebsd ++ lib.platforms.linux ++ lib.platforms.windows;
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ cmm ];
     teams = [ lib.teams.swift ];
