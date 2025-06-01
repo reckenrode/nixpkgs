@@ -10,13 +10,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-corelibs-libdispatch";
-  version = "5.8";
+  version = "6.1.1";
 
   src = fetchFromGitHub {
     owner = "swiftlang";
     repo = "swift-corelibs-libdispatch";
     tag = "swift-${finalAttrs.version}-RELEASE";
-    hash = "sha256-XOAWuaGqWJtxhGIPXYT3PIvk5OK0rkY4g1IOybJUlm4=";
+    hash = lib.fakeHash;
   };
 
   outputs = [
