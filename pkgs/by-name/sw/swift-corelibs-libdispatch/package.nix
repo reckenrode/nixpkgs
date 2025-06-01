@@ -1,16 +1,22 @@
 {
   lib,
-  stdenv,
   cmake,
   fetchFromGitHub,
   ninja,
-  useSwift ? true,
+  stdenv,
   swift,
+  useSwift ? true,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-corelibs-libdispatch";
   version = "6.1.1";
+
+  outputs = [
+    "out"
+    "dev"
+    "man"
+  ];
 
   src = fetchFromGitHub {
     owner = "swiftlang";
@@ -19,33 +25,28 @@ stdenv.mkDerivation (finalAttrs: {
     hash = lib.fakeHash;
   };
 
-  outputs = [
-    "out"
-    "dev"
-    "man"
-  ];
-
-  nativeBuildInputs =
-    [ cmake ]
-    ++ lib.optionals useSwift [
-      ninja
-      swift
-    ];
-
   patches = [ ./disable-swift-overlay.patch ];
 
-  cmakeFlags = lib.optional useSwift "-DENABLE_SWIFT=ON";
-
-  postInstall = ''
-    # Provide a CMake module. This is primarily used to glue together parts of
-    # the Swift toolchain. Modifying the CMake config to do this for us is
-    # otherwise more trouble.
-    mkdir -p $dev/lib/cmake/dispatch
-    export dylibExt="${stdenv.hostPlatform.extensions.sharedLibrary}"
-    substituteAll ${./glue.cmake} $dev/lib/cmake/dispatch/dispatchConfig.cmake
-  '';
-
   strictDeps = true;
+
+  cmakeFlags = [ (lib.cmakeBool "ENABLE_SWIFT" useSwift) ];
+
+  nativeBuildInputs =
+    [
+      cmake
+      ninja
+    ]
+    ++ lib.optionals useSwift [ swift ];
+
+  postInstall =
+    ''
+      # Provide a CMake module. This is primarily used to glue together parts of
+      # the Swift toolchain. Modifying the CMake config to do this for us is
+      # otherwise more trouble.
+      mkdir -p $dev/lib/cmake/dispatch
+      export dylibExt="${stdenv.hostPlatform.extensions.sharedLibrary}"
+      substituteAll ${./glue.cmake} $dev/lib/cmake/dispatch/dispatchConfig.cmake
+    '';
 
   __structuredAttrs = true;
 
