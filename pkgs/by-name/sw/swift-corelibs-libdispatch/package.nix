@@ -6,11 +6,15 @@
   ninja,
   stdenv,
   swift,
+  swift-corelibs-libdispatch,
   useSwift ? true,
 }:
 
+let
+  swift-corelibs-libdispatch-no-overlay = swift-corelibs-libdispatch.override { useSwift = true; };
+in
 stdenv.mkDerivation (finalAttrs: {
-  pname = "swift-corelibs-libdispatch";
+  pname = "swift-corelibs-libdispatch${lib.optionalString useSwift "-swift-overlay"}";
   version = "6.1.1";
 
   outputs = [
