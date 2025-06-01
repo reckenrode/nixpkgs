@@ -45,6 +45,10 @@ stdenv.mkDerivation (finalAttrs: {
     substituteAll ${./glue.cmake} $dev/lib/cmake/dispatch/dispatchConfig.cmake
   '';
 
+  strictDeps = true;
+
+  __structuredAttrs = true;
+
   meta = {
     description = "Grand Central Dispatch";
     platforms = lib.platforms.linux;
