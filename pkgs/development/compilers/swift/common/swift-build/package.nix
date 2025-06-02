@@ -35,9 +35,6 @@ stdenv.mkDerivation (finalAttrs: {
     (replaceVars ./patches/treat-nixpkgs-sdk-as-xcode.patch {
       store-dir = builtins.storeDir;
     })
-    # Swift Build hardcodes a *lot* of paths. This patch undoes them or replaces them with references to packages in
-    # the store.
-    ./patches/fix-hardcoded-paths.patch
   ];
 
   postPatch = ''

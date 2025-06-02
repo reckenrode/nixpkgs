@@ -84,6 +84,7 @@ lib.mapAttrs' (version: packageSet: {
     "callPackage"
     "llvmPackages"
     "newScope"
+    "overrideScope"
     "packages"
     "stdenv"
     "version_src"

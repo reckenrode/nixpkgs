@@ -20,6 +20,7 @@
   replaceVars,
   stdenv,
   swift-cmark,
+  swift-corelibs-libdispatch,
   xcbuild,
   xctest,
   zlib,
@@ -124,6 +125,8 @@ stdenv.mkDerivation (
         ./patches/${swiftMajor}/sil-missing-headers.patch
         # ClangImporter needs help finding the location of libc++.
         ./patches/clang-importer-libcxx.patch
+        # Link against libdispatch in nixpkgs instead of building it in-tree
+        ./patches/use-libdispatch-cmake.patch
         # Use libLTO.dylib from the LLVM built for Swift
         (replaceVars ./patches/specify-liblto-path.patch {
           libllvm_path = lib.getLib libllvm;
@@ -262,30 +265,25 @@ stdenv.mkDerivation (
         sigtool
         xcbuild
       ]
-      ++ lib.optionals (bootSwift != null) [
-        bootSwift
-      ];
+      ++ lib.optionals (bootSwift != null) [ bootSwift ];
 
     buildInputs =
       [
         libedit
         libffi
+        libllvm
         libxml2
         swift-cmark
         zlib
       ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-        apple-sdk
-      ]
-      # TODO: make unconditional
-      ++ lib.optionals (lib.versionAtLeast finalAttrs.version "6.0") [
-        libllvm
+      ++ lib.optionals stdenv.hostPlatform.isDarwin [ apple-sdk ]
+      ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform swift-corelibs-libdispatch) [
+        (swift-corelibs-libdispatch.override { useSwift = false; })
       ];
 
-    # `swift-syntax-lib` doesn’t seem to be included in the `all` target in Swift 6.1.
     ninjaFlags = [
       "all"
-      "swift-syntax-lib"
+      "swift-syntax-lib" # `swift-syntax-lib` doesn’t seem to be included in the `all` target in Swift 6.1.
     ];
 
     doCheck = stdenv.buildPlatform.canExecute stdenv.hostPlatform;
@@ -336,18 +334,16 @@ stdenv.mkDerivation (
           '';
 
     # Will effectively be `buildInputs` when swift is put in `nativeBuildInputs`.
-    depsTargetTargetPropagated = lib.optionals stdenv.targetPlatform.isDarwin [ apple-sdk ]
-    #    ++ lib.optionals (lib.versionAtLeast finalAttrs.version "6.1") [ swift-testing ]
-    ;
+    depsTargetTargetPropagated = lib.optionals stdenv.targetPlatform.isDarwin [ apple-sdk ];
 
     __structuredAttrs = true;
 
     passthru.swiftPlatform =
-      if stdenv.hostPlatform.isDarwin then
+      if stdenv.targetPlatform.isDarwin then
         "macosx"
-      else if stdenv.hostPlatform.isLinux then
+      else if stdenv.targetPlatform.isLinux then
         "linux"
-      else if stdenv.hostPlatform.isWindows then
+      else if stdenv.targetPlatform.isWindows then
         "windows"
       else
         lib.throw "unsupported platform";
@@ -355,10 +351,10 @@ stdenv.mkDerivation (
     meta = {
       description = "Swift Programming Language";
       homepage = "https://github.com/swiftlang/swift";
-      maintainers = lib.teams.swift.members;
-      license = lib.licenses.asl20;
-      platforms = with lib.platforms; lib.platforms.darwin ++ linux ++ windows;
+      platforms = lib.platforms.darwin ++ lib.platforms.linux ++ lib.platforms.windows;
       badPlatforms = [ lib.systems.inspect.patterns.is32bit ];
+      license = lib.licenses.asl20;
+      teams = [ lib.teams.swift ];
     };
   })
 )
