@@ -118,6 +118,8 @@ stdenv.mkDerivation (
         # From https://github.com/swiftlang/swift/pull/70791.
         ./patches/${swiftMajor}/cmark-build-revamp.patch
         # Patch paths to use the separate 'lib' output.
+        # Link against libdispatch in nixpkgs instead of building it in-tree
+        ./patches/${swiftMajor}/libdispatch-cmake.patch
         ./patches/${swiftMajor}/separate-lib.patch
         # Fix compilation errors when building the SIL moduel during bootstrap.
         # error: field has incomplete type 'clang::DeclContext::all_lookups_iterator'
@@ -125,8 +127,6 @@ stdenv.mkDerivation (
         ./patches/${swiftMajor}/sil-missing-headers.patch
         # ClangImporter needs help finding the location of libc++.
         ./patches/clang-importer-libcxx.patch
-        # Link against libdispatch in nixpkgs instead of building it in-tree
-        ./patches/use-libdispatch-cmake.patch
         # Use libLTO.dylib from the LLVM built for Swift
         (replaceVars ./patches/specify-liblto-path.patch {
           libllvm_path = lib.getLib libllvm;

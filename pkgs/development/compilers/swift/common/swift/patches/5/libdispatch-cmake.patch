@@ -1,27 +1,24 @@
 diff --git a/stdlib/cmake/modules/StdlibOptions.cmake b/stdlib/cmake/modules/StdlibOptions.cmake
-index 24d1b83621..0caeb59a01 100644
+index d15f734a1d..314f06ee98 100644
 --- a/stdlib/cmake/modules/StdlibOptions.cmake
 +++ b/stdlib/cmake/modules/StdlibOptions.cmake
-@@ -221,9 +221,7 @@
+@@ -277,7 +277,5 @@
+ endif()
  
-    if (SWIFT_ENABLE_DISPATCH)
-      set(SWIFT_CONCURRENCY_USES_DISPATCH TRUE)
--     if (NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT EXISTS "${SWIFT_PATH_TO_LIBDISPATCH_SOURCE}")
--       message(SEND_ERROR "Concurrency requires libdispatch on non-Darwin hosts.  Please specify SWIFT_PATH_TO_LIBDISPATCH_SOURCE")
--     endif()
-+     find_package(dispatch)
-    endif()
- 
-   if(SWIFT_CONCURRENCY_USES_DISPATCH)
+ if(SWIFT_CONCURRENCY_USES_DISPATCH AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+-  if(NOT EXISTS "${SWIFT_PATH_TO_LIBDISPATCH_SOURCE}")
+-    message(SEND_ERROR "Concurrency requires libdispatch on non-Darwin hosts.  Please specify SWIFT_PATH_TO_LIBDISPATCH_SOURCE")
+-  endif()
++  find_package(dispatch)
+ endif()
 diff --git a/stdlib/public/Concurrency/CMakeLists.txt b/stdlib/public/Concurrency/CMakeLists.txt
-index 5f593ecf6f..b728d57a77 100644
+index 6f57de0684..d5a11ce3d0 100644
 --- a/stdlib/public/Concurrency/CMakeLists.txt
 +++ b/stdlib/public/Concurrency/CMakeLists.txt
-@@ -24,10 +24,7 @@
- set(swift_concurrency_incorporate_object_libraries_so swiftThreading)
+@@ -34,9 +34,7 @@
  
  if("${SWIFT_CONCURRENCY_GLOBAL_EXECUTOR}" STREQUAL "dispatch")
--  if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+   if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 -    include_directories(AFTER
 -                          ${SWIFT_PATH_TO_LIBDISPATCH_SOURCE})
 -
