@@ -30,7 +30,7 @@ let
         // {
           inherit release_version;
           bootSwift =
-            if !(lib.systems.equals stdenv.buildPlatform stdenv.hostPlatform) then
+            if !lib.systems.equals stdenv.buildPlatform stdenv.hostPlatform then
               buildPackages.swiftPackages.swift
             else if release_major == "5" then
               self.swift.override {
@@ -82,7 +82,7 @@ lib.mapAttrs' (version: packageSet: {
     "bootSwiftpm"
     "bootSwiftpmHook"
     "callPackage"
-    "llvmPackages"
+    #    "llvmPackages"
     "newScope"
     "overrideScope"
     "packages"

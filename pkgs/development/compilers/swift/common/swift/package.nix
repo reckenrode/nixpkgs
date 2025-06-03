@@ -3,7 +3,6 @@
   apple-sdk_14,
   apple-sdk_15,
   bootSwift,
-  buildPackages,
   callPackage,
   cctools,
   cmake,
@@ -12,19 +11,23 @@
   fetchpatch2,
   libedit,
   libffi,
+  libuuid,
   libxml2,
   llvmPackages,
-  ninja,
+  ninja_1_11,
   perl,
   python3Packages,
   replaceVars,
   stdenv,
   swift-cmark,
   swift-corelibs-libdispatch,
+  version_src,
+  wrapBintoolsWith,
   xcbuild,
   xctest,
+  xz,
   zlib,
-  version_src,
+  zstd,
   enableBuildingSwiftWithSwift ? true,
   enableSwiftDriver ? enableBuildingSwiftWithSwift,
 }:
@@ -35,8 +38,8 @@ let
   inherit (llvmPackages)
     clang
     libclang
-    llvm
     libllvm
+    llvm
     ;
 
   apple-sdk =
@@ -54,6 +57,14 @@ let
     lib.replaceStrings [ "darwin" ] [ "macosx${stdenv.hostPlatform.darwinMinVersion}" ]
       stdenv.hostPlatform.config;
 
+  # https://github.com/NixOS/nixpkgs/issues/327836
+  # Fail to build with ninja 1.12 when NIX_BUILD_CORES is low (Hydra or Github Actions).
+  # Can reproduce using `nix --option cores 2 build -f . swiftPackages.swift-unwrapped`.
+  # Until we find out the exact cause, follow [swift upstream][1], pin ninja to version
+  # 1.11.1.
+  # [1]: https://github.com/swiftlang/swift/pull/72989
+  ninja = ninja_1_11;
+
   python3 = python3Packages.python.withPackages (p: [ p.setuptools ]); # python 3.12 compat.
 
   buildSwiftDriver = callPackage ./swift-driver {
@@ -61,6 +72,8 @@ let
       swift = bootSwift;
     };
   };
+
+  dylibExt = stdenv.hostPlatform.extensions.sharedLibrary;
 in
 stdenv.mkDerivation (
   lib.extends (if enableSwiftDriver then buildSwiftDriver else _: _: { }) (finalAttrs: {
@@ -193,6 +206,12 @@ stdenv.mkDerivation (
         --replace-fail \
           'set(clang_headers_location "''${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/''${CLANG_VERSION${lib.optionalString (lib.versionAtLeast finalAttrs.version "6.0") "_MAJOR"}}")' \
           'set(clang_headers_location "${lib.getBin clang}/resource-root")'
+    '' + lib.optionalString (!stdenv.hostPlatform.isDarwin || lib.versionAtLeast finalAttrs.version "6.2") ''
+      # Use absolute path references for `dlopen`. This is only used on Darwin on Swift 6.2 or newer.
+      substituteInPlace stdlib/public/Backtracing/Compression.swift \
+        --replace-fail liblzma${dylibExt} ${lib.escapeShellArg (lib.getLib xz)}/lib/liblzma${dylibExt} \
+        --replace-fail libz${dylibExt} ${lib.escapeShellArg (lib.getLib zlib)}/lib/libz${dylibExt} \
+        --replace-fail libzstd${dylibExt} ${lib.escapeShellArg (lib.getLib zstd)}/lib/libzstd${dylibExt}
     '';
 
     dontFixCmake = true;
@@ -240,7 +259,11 @@ stdenv.mkDerivation (
       );
 
     # Swift uses `<arch>-apple.macosx` triples instead of `<arch>-apple-darwin`, which causes tons of warnings.
-    env.NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING = true;
+    env = {
+      NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING = true;
+    };
+    # Building Swift 5.10.1 fails when linking with gold.
+#    // lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) { NIX_CFLAGS_LINK = "-fuse-ld=bfd"; };
 
     preConfigure =
       if enableBuildingSwiftWithSwift then
@@ -277,7 +300,8 @@ stdenv.mkDerivation (
         zlib
       ]
       ++ lib.optionals stdenv.hostPlatform.isDarwin [ apple-sdk ]
-      ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform swift-corelibs-libdispatch) [
+      ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
+        libuuid
         (swift-corelibs-libdispatch.override { useSwift = false; })
       ];
 

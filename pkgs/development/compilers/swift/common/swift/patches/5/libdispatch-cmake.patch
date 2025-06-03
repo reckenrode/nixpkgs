@@ -1,28 +1,56 @@
-diff --git a/stdlib/cmake/modules/StdlibOptions.cmake b/stdlib/cmake/modules/StdlibOptions.cmake
-index d15f734a1d..314f06ee98 100644
---- a/stdlib/cmake/modules/StdlibOptions.cmake
-+++ b/stdlib/cmake/modules/StdlibOptions.cmake
-@@ -277,7 +277,5 @@
+diff --git a/swift/CMakeLists.txt b/swift/CMakeLists.txt
+index c758792bf4..610b80e8d5 100644
+--- a/swift/CMakeLists.txt
++++ b/swift/CMakeLists.txt
+@@ -707,12 +707,6 @@
+   if(SWIFT_INCLUDE_TOOLS AND SWIFT_BUILD_SOURCEKIT)
+     set(SWIFT_BUILD_HOST_DISPATCH TRUE)
+   endif()
+-
+-  if(SWIFT_BUILD_HOST_DISPATCH)
+-    if(NOT EXISTS "${SWIFT_PATH_TO_LIBDISPATCH_SOURCE}")
+-      message(SEND_ERROR "SourceKit requires libdispatch on non-Darwin hosts.  Please specify SWIFT_PATH_TO_LIBDISPATCH_SOURCE")
+-    endif()
+-  endif()
  endif()
  
- if(SWIFT_CONCURRENCY_USES_DISPATCH AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+ file(STRINGS "utils/availability-macros.def" SWIFT_STDLIB_AVAILABILITY_DEFINITIONS)
+@@ -1259,8 +1253,8 @@
+   message(STATUS "Doxygen: enabled")
+ endif()
+ 
+-if(SWIFT_ENABLE_DISPATCH)
+-  include(Libdispatch)
++if(SWIFT_ENABLE_DISPATCH AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
++  find_package(dispatch)
+ endif()
+ 
+ # Add all of the subdirectories, where we actually do work.
+diff --git a/swift/stdlib/cmake/modules/StdlibOptions.cmake b/swift/stdlib/cmake/modules/StdlibOptions.cmake
+index d15f734a1d..6189c76f68 100644
+--- a/swift/stdlib/cmake/modules/StdlibOptions.cmake
++++ b/swift/stdlib/cmake/modules/StdlibOptions.cmake
+@@ -275,9 +275,3 @@
+ if(SWIFT_ENABLE_EXPERIMENTAL_CONCURRENCY AND "${SWIFT_CONCURRENCY_GLOBAL_EXECUTOR}" STREQUAL "dispatch")
+   set(SWIFT_CONCURRENCY_USES_DISPATCH TRUE)
+ endif()
+-
+-if(SWIFT_CONCURRENCY_USES_DISPATCH AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 -  if(NOT EXISTS "${SWIFT_PATH_TO_LIBDISPATCH_SOURCE}")
 -    message(SEND_ERROR "Concurrency requires libdispatch on non-Darwin hosts.  Please specify SWIFT_PATH_TO_LIBDISPATCH_SOURCE")
 -  endif()
-+  find_package(dispatch)
- endif()
-diff --git a/stdlib/public/Concurrency/CMakeLists.txt b/stdlib/public/Concurrency/CMakeLists.txt
-index 6f57de0684..d5a11ce3d0 100644
---- a/stdlib/public/Concurrency/CMakeLists.txt
-+++ b/stdlib/public/Concurrency/CMakeLists.txt
-@@ -34,9 +34,7 @@
+-endif()
+diff --git a/swift/stdlib/public/Concurrency/CMakeLists.txt b/swift/stdlib/public/Concurrency/CMakeLists.txt
+index 6f57de0684..a100cbdb2f 100644
+--- a/swift/stdlib/public/Concurrency/CMakeLists.txt
++++ b/swift/stdlib/public/Concurrency/CMakeLists.txt
+@@ -34,9 +34,6 @@
  
  if("${SWIFT_CONCURRENCY_GLOBAL_EXECUTOR}" STREQUAL "dispatch")
    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 -    include_directories(AFTER
 -                          ${SWIFT_PATH_TO_LIBDISPATCH_SOURCE})
 -
-+    find_package(dispatch)
      # FIXME: we can't rely on libdispatch having been built for the
      # target at this point in the process.  Currently, we're relying
      # on soft-linking.

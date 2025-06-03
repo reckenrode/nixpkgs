@@ -1,4 +1,4 @@
-{ buildPackages, version_src }:
+{ buildPackages, fetchFromGitHub, overrideCC, version_src }:
 
 # Swift needs to be built against the matching tag from the LLVM fork in the swiftlang repo.
 # Ideally, it would build against upstream LLVM, but it depends on APIs that have not been upstreamed.
@@ -10,7 +10,7 @@ let
     };
     officialRelease = { }; # Set but empty because we're overriding everything from it.
     inherit (version_src.llvm) version;
-    src = buildPackages.fetchFromGitHub {
+    src = fetchFromGitHub {
       inherit (version_src.llvm)
         owner
         repo
@@ -29,6 +29,13 @@ let
             path = ./patches;
           }
         ];
+        "lld/gnu-install-dirs.patch" = patches."lld/gnu-install-dirs.patch" ++ [
+          {
+            after = "15";
+            before = "17";
+            path = ./patches;
+          }
+        ];
         "llvm/sancov-libc++-compat.patch" = [
           {
             before = "19";
@@ -39,4 +46,6 @@ let
     doCheck = false;
   };
 in
-self
+self // {
+  stdenv = overrideCC self.stdenv self.clang;
+}

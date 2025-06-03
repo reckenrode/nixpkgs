@@ -16,6 +16,14 @@
   getVersionFile,
   fetchpatch,
 }:
+
+let
+  swift_version =
+    let
+      parsed = lib.splitString "-" release_version;
+    in
+    if lib.length parsed == 2 then lib.elemAt parsed 1 else null;
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "lld";
   inherit version;
@@ -46,7 +54,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optional (lib.versions.major release_version == "14") (
       getVersionFile "lld/fix-root-src-dir.patch"
     )
-    ++ lib.optional (lib.versionAtLeast release_version "16" && lib.versionOlder release_version "18") (
+    ++ lib.optional (lib.versionAtLeast release_version "16" && lib.versionOlder release_version "18" && swift_version == null) (
       getVersionFile "lld/add-table-base.patch"
     )
     ++ lib.optional (lib.versions.major release_version == "18") (

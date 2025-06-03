@@ -1,7 +1,7 @@
-diff --git a/lld/CMakeLists.txt b/lld/CMakeLists.txt
+diff --git a/CMakeLists.txt b/CMakeLists.txt
 index be4ea8540750..a42db839db88 100644
---- a/lld/CMakeLists.txt
-+++ b/lld/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
 @@ -20,10 +20,22 @@ if(LLD_BUILT_STANDALONE)
    find_package(LLVM REQUIRED HINTS "${LLVM_CMAKE_DIR}")
    list(APPEND CMAKE_MODULE_PATH "${LLVM_DIR}")
@@ -29,10 +29,10 @@ index be4ea8540750..a42db839db88 100644
  
    find_program(LLVM_TABLEGEN_EXE "llvm-tblgen" ${LLVM_TOOLS_BINARY_DIR}
      NO_DEFAULT_PATH)
-diff --git a/lld/cmake/modules/AddLLD.cmake b/lld/cmake/modules/AddLLD.cmake
+diff --git a/cmake/modules/AddLLD.cmake b/cmake/modules/AddLLD.cmake
 index d3924f7243d4..42a7cd62281c 100644
---- a/lld/cmake/modules/AddLLD.cmake
-+++ b/lld/cmake/modules/AddLLD.cmake
+--- a/cmake/modules/AddLLD.cmake
++++ b/cmake/modules/AddLLD.cmake
 @@ -18,8 +18,8 @@ macro(add_lld_library name)
      install(TARGETS ${name}
        COMPONENT ${name}
