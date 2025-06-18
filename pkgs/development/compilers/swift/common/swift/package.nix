@@ -201,18 +201,21 @@ stdenv.mkDerivation (
         substituteInPlace lib/Option/CMakeLists.txt \
           --replace-fail \''${LLVM_BINARY_DIR} ${lib.escapeShellArg (lib.getBin libclang)}
 
-      # Make sure Swift can find Clang’s resource dir during the build.
-      substituteInPlace stdlib/public/SwiftShims/swift/shims/CMakeLists.txt \
-        --replace-fail \
-          'set(clang_headers_location "''${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/''${CLANG_VERSION${lib.optionalString (lib.versionAtLeast finalAttrs.version "6.0") "_MAJOR"}}")' \
-          'set(clang_headers_location "${lib.getBin clang}/resource-root")'
-    '' + lib.optionalString (!stdenv.hostPlatform.isDarwin || lib.versionAtLeast finalAttrs.version "6.2") ''
-      # Use absolute path references for `dlopen`. This is only used on Darwin on Swift 6.2 or newer.
-      substituteInPlace stdlib/public/Backtracing/Compression.swift \
-        --replace-fail liblzma${dylibExt} ${lib.escapeShellArg (lib.getLib xz)}/lib/liblzma${dylibExt} \
-        --replace-fail libz${dylibExt} ${lib.escapeShellArg (lib.getLib zlib)}/lib/libz${dylibExt} \
-        --replace-fail libzstd${dylibExt} ${lib.escapeShellArg (lib.getLib zstd)}/lib/libzstd${dylibExt}
-    '';
+        # Make sure Swift can find Clang’s resource dir during the build.
+        substituteInPlace stdlib/public/SwiftShims/swift/shims/CMakeLists.txt \
+          --replace-fail \
+            'set(clang_headers_location "''${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/''${CLANG_VERSION${lib.optionalString (lib.versionAtLeast finalAttrs.version "6.0") "_MAJOR"}}")' \
+            'set(clang_headers_location "${lib.getBin clang}/resource-root")'
+      ''
+      +
+        lib.optionalString (!stdenv.hostPlatform.isDarwin || lib.versionAtLeast finalAttrs.version "6.2")
+          ''
+            # Use absolute path references for `dlopen`. This is only used on Darwin on Swift 6.2 or newer.
+            substituteInPlace stdlib/public/Backtracing/Compression.swift \
+              --replace-fail liblzma${dylibExt} ${lib.escapeShellArg (lib.getLib xz)}/lib/liblzma${dylibExt} \
+              --replace-fail libz${dylibExt} ${lib.escapeShellArg (lib.getLib zlib)}/lib/libz${dylibExt} \
+              --replace-fail libzstd${dylibExt} ${lib.escapeShellArg (lib.getLib zstd)}/lib/libzstd${dylibExt}
+          '';
 
     dontFixCmake = true;
 
@@ -258,12 +261,13 @@ stdenv.mkDerivation (
         ]
       );
 
-    # Swift uses `<arch>-apple.macosx` triples instead of `<arch>-apple-darwin`, which causes tons of warnings.
-    env = {
-      NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING = true;
-    };
-    # Building Swift 5.10.1 fails when linking with gold.
-#    // lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) { NIX_CFLAGS_LINK = "-fuse-ld=bfd"; };
+    env =
+      {
+        # Swift uses `<arch>-apple.macosx` triples instead of `<arch>-apple-darwin`, which causes tons of warnings.
+        NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING = true;
+      }
+      # Building Swift 5.10.1 fails when linking with gold.
+      // lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) { NIX_CFLAGS_LINK = "-fuse-ld=lld"; };
 
     preConfigure =
       if enableBuildingSwiftWithSwift then

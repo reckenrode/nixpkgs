@@ -15,8 +15,8 @@ stdenv.mkDerivation rec {
     hash = "sha256-+Hzuae7CtPy/YKOWsDCtaqNBXxkqpffuhMrV4R9/WuM=";
   };
 
-  # This test is filesystem-dependent - observed failing on ZFS
-  postPatch = lib.optionalString stdenv.hostPlatform.isFreeBSD ''
+  # This test is filesystem-dependent - observed failing on ZFS and APFS
+  postPatch = lib.optionalString (stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isFreeBSD) ''
     sed -E -i -e '/bad-filenames/d' tests/Makefile.am
   '';
 

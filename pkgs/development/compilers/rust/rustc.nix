@@ -153,7 +153,7 @@ stdenv.mkDerivation (finalAttrs: {
       "--target=${
         concatStringsSep "," (
           # Other targets that don't need any extra dependencies to build.
-          optionals (!fastCross) [
+          optionals (!fastCross && !stdenv.hostPlatform.isDarwin) [
             "wasm32-unknown-unknown"
             "wasm32v1-none"
             "bpfel-unknown-none"
