@@ -6,6 +6,7 @@
   ninja,
   perl,
   moveBuildTree,
+  xcbuild,
   srcs,
   patches ? [ ],
 }:
@@ -33,7 +34,7 @@ stdenv.mkDerivation (
         ninja
         perl
       ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [ moveBuildTree ];
+      ++ lib.optionals stdenv.hostPlatform.isDarwin [ moveBuildTree xcbuild ];
     propagatedBuildInputs =
       (lib.warnIf (args ? qtInputs) "qt6.qtModule's qtInputs argument is deprecated" args.qtInputs or [ ])
       ++ (args.propagatedBuildInputs or [ ]);

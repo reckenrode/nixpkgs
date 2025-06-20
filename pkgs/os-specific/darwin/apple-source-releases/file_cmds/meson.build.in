@@ -5,6 +5,8 @@
 project('file_cmds', 'c', version : '@version@')
 add_global_arguments(
     '-DTARGET_OS_BRIDGE=0',
+    '-DTARGET_OS_EXCLAVECORE=0',
+    '-DTARGET_OS_EXCLAVEKIT=0',
     language : 'c',
 )
 

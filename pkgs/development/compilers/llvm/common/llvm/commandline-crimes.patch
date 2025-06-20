@@ -1,0 +1,34 @@
+diff --git a/lib/Support/CommandLine.cpp b/lib/Support/CommandLine.cpp
+index 899cc521056a..8789f39a2593 100644
+--- a/lib/Support/CommandLine.cpp
++++ b/lib/Support/CommandLine.cpp
+@@ -181,9 +181,6 @@ public:
+     if (Opt.hasArgStr())
+       return;
+     if (!SC->OptionsMap.insert(std::make_pair(Name, &Opt)).second) {
+-      errs() << ProgramName << ": CommandLine Error: Option '" << Name
+-             << "' registered more than once!\n";
+-      report_fatal_error("inconsistency in registered CommandLine options");
+     }
+ 
+     // If we're adding this to all sub-commands, add it to the ones that have
+@@ -216,9 +213,6 @@ public:
+ 
+       // Add argument to the argument map!
+       if (!SC->OptionsMap.insert(std::make_pair(O->ArgStr, O)).second) {
+-        errs() << ProgramName << ": CommandLine Error: Option '" << O->ArgStr
+-               << "' registered more than once!\n";
+-        HadErrors = true;
+       }
+     }
+ 
+@@ -332,9 +326,6 @@ public:
+   void updateArgStr(Option *O, StringRef NewName, SubCommand *SC) {
+     SubCommand &Sub = *SC;
+     if (!Sub.OptionsMap.insert(std::make_pair(NewName, O)).second) {
+-      errs() << ProgramName << ": CommandLine Error: Option '" << O->ArgStr
+-             << "' registered more than once!\n";
+-      report_fatal_error("inconsistency in registered CommandLine options");
+     }
+     Sub.OptionsMap.erase(O->ArgStr);
+   }

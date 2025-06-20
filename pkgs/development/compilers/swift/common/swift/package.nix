@@ -138,6 +138,8 @@ stdenv.mkDerivation (
         # error: field has incomplete type 'clang::DeclContext::all_lookups_iterator'
         # error: field has incomplete type 'clang::DeclContext::ddiag_iterator'
         ./patches/${swiftMajor}/sil-missing-headers.patch
+        # ClangImporter needs help dealing with separate glibc and libstdc++ paths on Linux.
+        ./patches/${swiftMajor}/linux-fix-libc-paths.patch
         # ClangImporter needs help finding the location of libc++.
         ./patches/clang-importer-libcxx.patch
         # Use libLTO.dylib from the LLVM built for Swift

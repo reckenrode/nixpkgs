@@ -17,6 +17,12 @@ stdenv.mkDerivation rec {
     hash = "sha256-blhSdtNXwe4wKPVKlopsE0omgikMdl12JjwqASwJM2w=";
   };
 
+  patches = [
+    # This test fails to compile with Clang 20
+    # See: https://github.com/catchorg/Catch2/issues/2991
+    ./clang-20-disable-broken-test.patch
+  ];
+
   nativeBuildInputs = [
     cmake
   ];

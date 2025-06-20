@@ -454,7 +454,7 @@ install_man('sa/sa.8')
 
 executable(
     'sc_usage',
-    dependencies : ncurses,
+    dependencies : [ncurses, util],
     install : true,
     sources : 'sc_usage/sc_usage.c',
 )
