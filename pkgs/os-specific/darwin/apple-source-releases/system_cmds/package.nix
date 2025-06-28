@@ -110,6 +110,12 @@ mkAppleDerivation {
 
   xcodeHash = "sha256-gdtn3zNIneZKy6+X0mQ51CFVLNM6JQYLbd/lotG5/Tw=";
 
+  patches = [
+    # `posix_spawnattr_set_use_sec_transition_shims_np` is only available on macOS 15.2 or newer.
+    # Disable the feature that requires it when running on older systems.
+    ./patches/conditionalize-security-transition-shims.patch
+  ];
+
   postPatch = ''
     # Replace hard-coded, impure system paths with the output path in the store.
     sed -e "s|PATH=[^;]*|PATH='$out/bin'|" -i "pagesize/pagesize.sh"

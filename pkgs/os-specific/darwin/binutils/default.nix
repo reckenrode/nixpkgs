@@ -27,16 +27,15 @@ let
     "size"
     "strings"
     "strip"
+    "ranlib" # Note: Doesn’t support all command-line arguments as the one from cctools, but it’s usually good enough.
   ];
 
   cctools_cmds = [
     "codesign_allocate"
     "gprof"
-    "ranlib"
-    # Use the cctools versions because the LLVM ones can crash or fail when the cctools ones don’t.
-    # Revisit when LLVM is updated to LLVM 18 on Darwin.
-    "lipo"
-    "install_name_tool"
+    # Use the cctools versions because the LLVM ones have limitations preventing their use generally.
+    "lipo"              # Does not support static archives (e.g., causes failures in Meson’s test suite).
+    "install_name_tool" # Does not support `LC_REEXPORT_DYLIB` (e.g., as required by libiconv).
   ];
 
   linkManPages =

@@ -19,6 +19,12 @@ stdenv.mkDerivation rec {
   ];
   buildInputs = [ libiconv ];
 
+  # `configure` fails to detect libiconv on Darwin because `AM_ICONV` from gettext checks for bugs,
+  # which causes it to reject Darwin’s libiconv.
+  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+    NIX_LDFLAGS = "-liconv";
+  };
+
   src = fetchFromGitHub {
     owner = "dbry";
     repo = "WavPack";
