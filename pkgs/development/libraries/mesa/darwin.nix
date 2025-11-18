@@ -81,8 +81,8 @@ stdenv.mkDerivation {
   ];
 
   buildInputs = [
-    apple-sdk_26 # KosmicKrisp requires Metal 4 to build, but …
-    (darwinMinVersionHook "15.0") # … it supports back to Metal 3.2, which requires macOS 15.
+    apple-sdk_26 # KosmicKrisp requires Metal 4 to build …
+    (darwinMinVersionHook "26.0") # …and at runtime (i.e., at least macOS 26.0).
     libpng
     libxml2 # should be propagated from libllvm
     llvmPackages.libclang
