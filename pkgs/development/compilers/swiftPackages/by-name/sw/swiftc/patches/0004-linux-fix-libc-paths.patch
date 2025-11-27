@@ -1,0 +1,87 @@
+From b8a0d5a28fbb80be6fe000103cb6c9068541c601 Mon Sep 17 00:00:00 2001
+From: Randy Eckenrode <randy@largeandhighquality.com>
+Date: Sun, 4 Jan 2026 14:38:42 -0500
+Subject: [PATCH] linux-fix-libc-paths
+
+This code injects an LLVM modulemap for glibc and libstdc++ by
+overriding specific VFS paths. In order to do that, it needs to know the
+actual locations of glibc and libstdc++, but it only searches `-sysroot`
+and fails. Here we patch it to also consider `-idirafter` and `-isystem`
+as added by cc-wrapper.
+---
+ lib/ClangImporter/ClangIncludePaths.cpp | 38 +++++++++++++++++++++++--
+ 1 file changed, 36 insertions(+), 2 deletions(-)
+
+diff --git a/lib/ClangImporter/ClangIncludePaths.cpp b/lib/ClangImporter/ClangIncludePaths.cpp
+index 948b99876f0..7e43c2d1409 100644
+--- a/lib/ClangImporter/ClangIncludePaths.cpp
++++ b/lib/ClangImporter/ClangIncludePaths.cpp
+@@ -144,6 +144,7 @@ ClangImporter::createClangDriver(
+ /// \return a path without dots (`../`, './').
+ static std::optional<Path> findFirstIncludeDir(
+     const llvm::opt::InputArgList &args,
++    const llvm::opt::ArgList &DriverArgs,
+     const ArrayRef<const char *> expectedFileNames,
+     const llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> &vfs) {
+   // C++ stdlib paths are added as `-internal-isystem`.
+@@ -154,6 +155,39 @@ static std::optional<Path> findFirstIncludeDir(
+                      args.getAllArgValues(
+                          clang::driver::options::OPT_internal_externc_isystem));
+ 
++  // Nix adds the C stdlib include path using `-idirafter`.
++  llvm::append_range(includeDirs,
++                     DriverArgs.getAllArgValues(
++                         clang::driver::options::OPT_idirafter));
++  // Nix adds the C++ stdlib include path using `-cxx-isystem`.
++  llvm::append_range(includeDirs,
++                     DriverArgs.getAllArgValues(
++                         clang::driver::options::OPT_cxx_isystem));
++
++  // Get the libc path and flags from the wrapper.
++  if (auto nixCC = ::getenv("NIX_CC")) {
++    llvm::BumpPtrAllocator allocator;
++    llvm::StringSaver saver(allocator);
++    
++    // Treat `libc-cflags` as a response file for Clang. Because Clang
++    // expects response files to be expanded already at this point, it has
++    // to be expanded manually.
++    for (auto flagsDir : {"libc-cflags", "libcxx-cxxflags"}) {
++      llvm::SmallString<256> path = StringRef(nixCC);
++      llvm::sys::path::append(path, "nix-support", flagsDir);
++      if (auto buffer = llvm::vfs::getRealFileSystem()->getBufferForFile(path)) {
++        auto contents = (*buffer)->getMemBufferRef().getBuffer();
++        llvm::SmallVector<const char*> args;
++#if _WIN32
++        llvm::cl::TokenizeWindowsCommandLineNoCopy(contents, saver, args);
++#else
++        llvm::cl::TokenizeGNUCommandLine(contents, saver, args);
++#endif
++        llvm::append_range(includeDirs, args);
++      }
++    }
++  }
++  
+   for (const auto &includeDir : includeDirs) {
+     Path dir(includeDir);
+     bool allExpectedExist = true;
+@@ -221,7 +255,7 @@ getLibcFileMapping(const ASTContext &ctx, StringRef modulemapFileName,
+   // modulemap are present.
+   Path libcDir;
+   if (auto dir = findFirstIncludeDir(
+-          parsedIncludeArgs, {"inttypes.h", "unistd.h", "stdint.h"}, vfs)) {
++          parsedIncludeArgs, clangDriverArgs, {"inttypes.h", "unistd.h", "stdint.h"}, vfs)) {
+     libcDir = dir.value();
+   } else {
+     if (!suppressDiagnostic)
+@@ -302,7 +336,7 @@ static void getLibStdCxxFileMapping(
+     return;
+ 
+   Path cxxStdlibDir;
+-  if (auto dir = findFirstIncludeDir(parsedStdlibArgs,
++  if (auto dir = findFirstIncludeDir(parsedStdlibArgs, clangDriverArgs,
+                                      {"cstdlib", "string", "vector"}, vfs)) {
+     cxxStdlibDir = dir.value();
+   } else {
+-- 
+2.51.2
+
