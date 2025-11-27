@@ -151,7 +151,7 @@
   withVorbis ? withHeadlessDeps, # Vorbis de/encoding, native encoder exists
   withVpl ? withFullDeps && stdenv.hostPlatform.isLinux, # Hardware acceleration via intel libvpl
   withVpx ? withHeadlessDeps && stdenv.buildPlatform == stdenv.hostPlatform, # VP8 & VP9 de/encoding
-  withVulkan ? withHeadlessDeps && !stdenv.hostPlatform.isDarwin,
+  withVulkan ? withHeadlessDeps,
   withVvenc ? withFullDeps && lib.versionAtLeast version "7.1", # H.266/VVC encoding
   withWebp ? withHeadlessDeps, # WebP encoder
   withWhisper ? withFullDeps && lib.versionAtLeast version "8.0", # Whisper speech recognition

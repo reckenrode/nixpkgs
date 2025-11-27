@@ -4757,7 +4757,7 @@ with pkgs;
     ];
   };
 
-  swiftPackages = recurseIntoAttrs (callPackage ../development/compilers/swift { });
+  swiftPackages = recurseIntoAttrs (callPackage ./swift-packages.nix { });
   inherit (swiftPackages)
     swift
     swiftpm

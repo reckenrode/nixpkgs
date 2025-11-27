@@ -61,7 +61,7 @@ bootstrapStdenv.mkDerivation (finalAttrs: {
     ./patches/0001-darwin-compatibility.patch
   ];
 
-  postPatch = lib.optionalString stdenv.hostPlatform.isDarwin ''
+  postPatch = ''
     substitute '${./meson.build.in}' "meson.build" --subst-var version
   '';
 
