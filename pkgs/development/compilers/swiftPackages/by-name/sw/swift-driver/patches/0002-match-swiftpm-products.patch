@@ -1,0 +1,82 @@
+From 5e61679e7fdbe8b243637bd00099221d9d078989 Mon Sep 17 00:00:00 2001
+From: Randy Eckenrode <randy@largeandhighquality.com>
+Date: Tue, 9 Dec 2025 18:15:16 -0500
+Subject: [PATCH] match-swiftpm-products
+
+---
+ Package.resolved                            | 6 +++---
+ Sources/SwiftDriverExecution/CMakeLists.txt | 7 +------
+ Sources/SwiftOptions/CMakeLists.txt         | 7 +------
+ 3 files changed, 5 insertions(+), 15 deletions(-)
+
+diff --git a/Package.resolved b/Package.resolved
+index ea13f2a0..9433b807 100644
+--- a/Package.resolved
++++ b/Package.resolved
+@@ -14,8 +14,8 @@
+       "kind" : "remoteSourceControl",
+       "location" : "https://github.com/swiftlang/swift-llbuild.git",
+       "state" : {
+-        "branch" : "release/6.2.1",
+-        "revision" : "d80e185b78cef06757a180a2729b84260c1422a5"
++        "branch" : "release/6.2",
++        "revision" : "073dff55529d7c4ecbd615ab5f5ac52ae5b380da"
+       }
+     },
+     {
+@@ -32,7 +32,7 @@
+       "kind" : "remoteSourceControl",
+       "location" : "https://github.com/swiftlang/swift-tools-support-core.git",
+       "state" : {
+-        "branch" : "release/6.2.1",
++        "branch" : "release/6.2",
+         "revision" : "5a993c8848487c934d53ffceef8e1cad0a241dc1"
+       }
+     }
+diff --git a/Sources/SwiftDriverExecution/CMakeLists.txt b/Sources/SwiftDriverExecution/CMakeLists.txt
+index 91c9bc12..17adca61 100644
+--- a/Sources/SwiftDriverExecution/CMakeLists.txt
++++ b/Sources/SwiftDriverExecution/CMakeLists.txt
+@@ -6,7 +6,7 @@
+ # See http://swift.org/LICENSE.txt for license information
+ # See http://swift.org/CONTRIBUTORS.txt for Swift project authors
+ 
+-add_library(SwiftDriverExecution
++add_library(SwiftDriverExecution STATIC
+   llbuild.swift
+   MultiJobExecutor.swift
+   SwiftDriverExecutor.swift)
+@@ -24,8 +24,3 @@ set_property(GLOBAL APPEND PROPERTY SWIFTDRIVER_EXPORTS SwiftDriverExecution)
+ # NOTE: workaround for CMake not setting up include flags yet
+ set_target_properties(SwiftDriverExecution PROPERTIES
+   INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_Swift_MODULE_DIRECTORY})
+-
+-install(TARGETS SwiftDriverExecution
+-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+diff --git a/Sources/SwiftOptions/CMakeLists.txt b/Sources/SwiftOptions/CMakeLists.txt
+index d4dbbcc3..4dea39d6 100644
+--- a/Sources/SwiftOptions/CMakeLists.txt
++++ b/Sources/SwiftOptions/CMakeLists.txt
+@@ -6,7 +6,7 @@
+ # See http://swift.org/LICENSE.txt for license information
+ # See http://swift.org/CONTRIBUTORS.txt for Swift project authors
+ 
+-add_library(SwiftOptions
++add_library(SwiftOptions STATIC
+   DriverKind.swift
+   Option.swift
+   OptionTable.swift
+@@ -23,8 +23,3 @@ set_property(GLOBAL APPEND PROPERTY SWIFTDRIVER_EXPORTS SwiftOptions)
+ # NOTE: workaround for CMake not setting up include flags yet
+ set_target_properties(SwiftOptions PROPERTIES
+   INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_Swift_MODULE_DIRECTORY})
+-
+-install(TARGETS SwiftOptions
+-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+-  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+-  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+-- 
+2.51.2
+
