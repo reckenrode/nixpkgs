@@ -6,7 +6,6 @@
   pkgsCross,
   callPackage,
   replaceVars,
-  moltenvk,
   src,
   pnameSuffix ? "",
   useStaging ? false,
