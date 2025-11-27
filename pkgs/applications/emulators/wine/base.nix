@@ -19,7 +19,6 @@
   nixosTests,
   pnameSuffix ? "",
   patches,
-  moltenvk,
   buildScript ? null,
   configureFlags ? [ ],
   mainProgram ? "wine",
@@ -190,9 +189,7 @@ stdenv.mkDerivation (
         ++ lib.optional pulseaudioSupport pkgs.libpulseaudio
         ++ lib.optional (xineramaSupport && x11Support) pkgs.libxinerama
         ++ lib.optional udevSupport pkgs.udev
-        ++ lib.optional vulkanSupport (
-          if stdenv.hostPlatform.isDarwin then moltenvk else pkgs.vulkan-loader
-        )
+        ++ lib.optional vulkanSupport pkgs.vulkan-loader
         ++ lib.optional sdlSupport pkgs.SDL2
         ++ lib.optional usbSupport pkgs.libusb1
         ++ lib.optionals gstreamerSupport (

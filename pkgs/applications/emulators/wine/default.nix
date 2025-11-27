@@ -50,7 +50,6 @@ args@{
   x11Support ? false,
   ffmpegSupport ? false,
   embedInstallers ? false, # The Mono and Gecko MSI installers
-  moltenvk, # Allow users to override MoltenVK easily
   smartcardSupport ? false,
 }:
 
