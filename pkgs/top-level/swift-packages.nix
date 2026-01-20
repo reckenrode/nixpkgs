@@ -1,9 +1,36 @@
 let
-  autoCalledPackages = import ./by-name-overlay.nix ../development/compilers/swiftPackages/by-name;
+  # Because of Nix's import-value cache, importing lib is free
+  lib = import ../../lib;
+
+  autoCalledPackages' = import ./by-name-overlay.nix ../development/compilers/swiftPackages/by-name;
+
+  # Split `autoCalledPackages'` into a set of packages that are internal to `swiftPackages` (“extras”) or exposed as
+  # public attributes. The dividing line is whether the package is useful on its own (e.g., provides binaries) or
+  # should normally be taken via `fetchSwiftPMDeps` or `swiftpm2nix`.
+
+  # Trying to do this via passthru attributes on the packages causes an infinite recursion.
+  extras = [
+#    "cxx-interop-test"
+    "swift-argument-parser"
+    "swift-asn1"
+    #    "swift-bin"
+    "swift-certificates"
+    "swift-cmark"
+    "swift-collections"
+    "swift-crypto"
+    "swift-llbuild"
+    "swift-system"
+    "swift-tools-support-core"
+    "wrapper"
+  ];
+
+  autoCalledExtraPackages =
+    final: prev: lib.filterAttrs (n: _: lib.elem n extras) (autoCalledPackages' final prev);
+
+  autoCalledPackages = final: prev: lib.removeAttrs (autoCalledPackages' final prev) extras;
 in
 
 {
-  lib,
   clangStdenv,
   generateSplicesForMkScope,
   llvmPackages,
@@ -14,13 +41,17 @@ in
 
 makeScopeWithSplicing' {
   inherit otherSplices;
-  extra =
+  extra = lib.extends autoCalledExtraPackages (
     self:
     let
       bootstrapSwiftPackages = self.overrideScope (
         final: prev: {
           stdlib = null; # Have the bootstrap compiler use its own build of the stdlib.
-          swift-bootstrap = prev.swiftc.override { swift-bootstrap = null; };
+          swift-bootstrap = prev.swift.override {
+            swiftc = self.swift-bin-unwrapped;
+            swift-driver = self.swift-bin-unwrapped;
+          };
+          #          }; # prev.swiftc.override { swift-bootstrap = null; };
           swift-driver = prev.swift-driver.overrideAttrs (old: {
             pname = "early-${old.pname}";
           });
@@ -53,16 +84,22 @@ makeScopeWithSplicing' {
 
       llvmPackages_current = llvmPackages;
       swift-bootstrap = bootstrapSwiftPackages.swift;
-      swift-no-swift-driver = self.swift.override { swift-driver = null; swift-testing = null; };
+      swift-no-swift-driver = self.swift.override {
+        swift-driver = null;
+        swift-testing = null;
+      };
       swift-no-testing = self.swift.override { swift-testing = null; };
 
-#      getBuildHost = pkg: pkg.__spliced.buildHost or pkg;
-#      getHostTarget = pkg: pkg.__spliced.hostTarget or pkg;
+      wrapSwiftcWith = args: self.wrapSwiftc.override args;
 
-       swift-argument-parser = self.swift-argument-parser;
-    };
+      #      getBuildHost = pkg: pkg.__spliced.buildHost or pkg;
+      #      getHostTarget = pkg: pkg.__spliced.hostTarget or pkg;
+
+      #       swift-argument-parser = self.swift-argument-parser;
+    }
+  );
   f = lib.extends autoCalledPackages (self: {
     stdenv = clangStdenv;
-    swift_release = "6.2.4";
+    swift_release = "6.3.3";
   });
 }

@@ -8,6 +8,7 @@
   swift-testing,
   swift_release,
   swiftc,
+  wrapSwiftc,
 }@args:
 
 let
@@ -29,8 +30,12 @@ let
 
   stdlibDevPath = lib.escapeShellArg (lib.getDev stdlib);
 
-  includeTesting = swiftc.supportsMacros && swift-testing != null;
+  includeTesting = swiftc.supportsMacros or false && swift-testing != null;
   swiftPlatform = stdenvNoCC.hostPlatform.swift.platform;
+
+  wrappedSwift = wrapSwiftc.override {
+    inherit swiftc swift-driver;
+  };
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "swift" + lib.removePrefix "swiftc" (lib.getName swiftc);
@@ -71,6 +76,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           dest_file=$out/bin/$(basename "$file")
           if [[ -L "$file" && "$(basename "$(readlink -f "$file")")" = swift-frontend ]]; then
             ln -s swift-frontend "$dest_file"
+          elif [ "$(basename "$file")" = swift-frontend ]; then
+            # Wrap `swift-frontend`
+            cp ${lib.getExe' wrappedSwift "swift-frontend"} "$out/bin/swift-frontend"
           else
             ln -s "$file" "$dest_file"
           fi
@@ -99,10 +107,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         done
       ''
       + lib.optionalString (stdlib != null) ''
-        # `swift-frontend` expects to find everything relative to its location after resolving symlinks.
-        # It’s easier to copy it instead of patching Swift to work with this.
-        rm "$out/bin/swift-frontend"
-        cp ${outputPath}/bin/swift-frontend "$out/bin/swift-frontend"
         # Set up the stdlib and Swift compiler libs. These are together under the same lib folder in the toolchain.
         for file in ${stdlibDevPath}/lib/*; do
           dname=$(basename "$file")
@@ -159,7 +163,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   ) finalAttrs.outputs
   + lib.optionalString (swift-driver != null) (
     ''
-      ln -s ${lib.escapeShellArg (lib.getExe swift-driver)} "$out/bin/swift-driver"
+      rm -f "$out/bin/swift-driver" "$out/bin/swift-help"
+      cp ${lib.getExe' wrappedSwift "swift-driver"} "$out/bin/swift-driver"
       ln -s ${lib.escapeShellArg (lib.getExe' swift-driver "swift-help")} "$out/bin/swift-help"
       for exe in swift swiftc; do
         mv "$out/bin/$exe" "$out/bin/$exe-legacy-driver"

@@ -20,8 +20,7 @@ expandResponseParams "$@"
 # there are some internal tools we don't wrap, plus swift-frontend doesn't link
 # and doesn't understand linker flags. This follows logic in
 # `lib/DriverTool/driver.cpp`.
-prog=@prog@
-progName="$(basename "$prog")"
+progName="$(basename "$0")"
 firstArg="${params[0]:-}"
 isFrontend=0
 isRepl=0
@@ -50,13 +49,15 @@ case "$firstArg" in
         ;;
     -modulewrap)
         # Don't wrap this integrated tool.
-        exec "$prog" "${params[@]}"
+        exec "@prog@" "${params[@]}"
         ;;
     repl)
         isRepl=1
         params=( "${params[@]:1}" )
         ;;
     --driver-mode=*)
+        progName="${firstArg/--driver-mode=/}"
+        params=( "${params[@]:1}" )
         ;;
     *)
         if [[ "$progName" == swift-frontend ]]; then
@@ -64,31 +65,6 @@ case "$firstArg" in
         fi
         ;;
 esac
-
-# For many tasks, Swift reinvokes swift-driver, the new driver implementation
-# written in Swift. It needs some help finding the executable, though, and
-# reimplementing the logic here is little effort. These checks follow
-# `shouldDisallowNewDriver`.
-if [[
-    $isFrontend = 0 &&
-    -n "@swiftDriver@" &&
-    -z "${SWIFT_USE_OLD_DRIVER:-}" &&
-    ( "$progName" == "swift" || "$progName" == "swiftc" )
-]]; then
-    prog=@swiftDriver@
-    # Driver mode must be the very first argument.
-    extraBefore+=( "--driver-mode=$progName" )
-    if [[ $isRepl = 1 ]]; then
-        extraBefore+=( "-repl" )
-    fi
-
-    # Ensure swift-driver invokes the unwrapped frontend (instead of finding
-    # the wrapped one via PATH), because we don't have to wrap a second time.
-    export SWIFT_DRIVER_SWIFT_FRONTEND_EXEC="@swift@/bin/swift-frontend"
-
-    # Ensure swift-driver can find the LLDB with Swift support for the REPL.
-    export SWIFT_DRIVER_LLDB_EXEC="@swift@/bin/lldb"
-fi
 
 path_backup="$PATH"
 
@@ -105,10 +81,17 @@ fi
 isCxx=0
 dontLink=$isFrontend
 
+# If `-sdk` or `-sysroot` has been passed on the command-line, `-nostdlibinc` from the Clang needs to be suppressed.
+# Otherwise, it won’t work. This breaks using static cross-SDKs as well as the bootstrap, which needs to create a
+# sysroot to use the upstream binaries to bootstrap Swift on Linux.
+hasSysroot=0
+
 for p in "${params[@]}"; do
     case "$p" in
         -cxx-interoperability-mode=default | -enable-cxx-interop | -enable-experimental-cxx-interop)
             isCxx=1 ;;
+        -sdk | -sysroot)
+            hasSysroot=1 ;;
     esac
 done
 
@@ -205,10 +188,11 @@ addCFlagsToList() {
             -I* | -L* | -F*)
                 list+=("${val}")
                 ;;
+            # Only include if `-sdk` and `-sysroot` have not been passed on the command-line.
             -nostdlibinc)
-                # If `-sdk` or `-sysroot` has been passed on the command-line, suppress `-nostdlibinc` from the Clang
-                # wrapper. Otherwise, it won’t work. This breaks using static cross-SDKs as well as the bootstrap,
-                # which needs to create a sysroot to use the upstream binaries to bootstrap Swift on Linux.
+                if [[ "$hasSysroot" != 1 ]]; then
+                    list+=("-Xcc" "$val")
+                fi
                 ;;
             # Pass through using -Xcc.
             *)
@@ -218,11 +202,20 @@ addCFlagsToList() {
     done
 }
 for i in ${NIX_SWIFTFLAGS_COMPILE:-}; do
+    case "$i" in
+        -sdk | -sysroot)
+            hasSysroot=1 ;;
+    esac
     extraAfter+=("$i")
 done
 for i in ${NIX_SWIFTFLAGS_COMPILE_BEFORE:-}; do
+    case "$i" in
+        -sdk | -sysroot)
+            hasSysroot=1 ;;
+    esac
     extraBefore+=("$i")
 done
+
 addCFlagsToList extraAfter $NIX_CFLAGS_COMPILE_@suffixSalt@
 addCFlagsToList extraBefore ${hardeningCFlags[@]+"${hardeningCFlags[@]}"} $NIX_CFLAGS_COMPILE_BEFORE_@suffixSalt@
 
@@ -286,19 +279,35 @@ done
 # add anything.  This is to prevent `gcc -v' (which normally prints
 # out the version number and returns exit code 0) from printing out
 # `No input files specified' and returning exit code 1.
-if [ "$*" = -v ]; then
+#
+# Some `swift-frontend` modes only support a subset of options.
+# Only pass through the params they expect.
+if [[ "$*" = -v || "$progName" = "swift-autolink-extract" ]]; then
     extraAfter=()
     extraBefore=()
+fi
+
+# Only set the driver mode if we’re not a frontend invocation. Setting it
+# unconditionally could result in setting the mode to `swift-frontend`,
+# which doesn’t work (e.g., it breaks the swift-syntax build).
+if [ "$isFrontend" != 1 ]; then
+    # --driver-mode _must_ be the first argument.
+    extraBefore=( "--driver-mode=$progName" "${extraBefore[@]}")
+fi
+
+# Make sure modules are cached in a writable location during builds.
+if [[ "${HOME:-/homeless-shelter}" = "/homeless-shelter" && -n "$NIX_BUILD_TOP" ]]; then
+  extraBefore+=( -module-cache-path "$NIX_BUILD_TOP/module-cache" )
 fi
 
 # Optionally print debug info.
 if (( "${NIX_DEBUG:-0}" >= 1 )); then
     # Old bash workaround, see ld-wrapper for explanation.
-    echo "extra flags before to $prog:" >&2
+    echo "extra flags before to @prog@:" >&2
     printf "  %q\n" ${extraBefore+"${extraBefore[@]}"}  >&2
-    echo "original flags to $prog:" >&2
+    echo "original flags to @prog@:" >&2
     printf "  %q\n" ${params+"${params[@]}"} >&2
-    echo "extra flags after to $prog:" >&2
+    echo "extra flags after to @prog@:" >&2
     printf "  %q\n" ${extraAfter+"${extraAfter[@]}"} >&2
 fi
 
@@ -306,12 +315,15 @@ PATH="$path_backup"
 # Old bash workaround, see above.
 
 if (( "${NIX_CC_USE_RESPONSE_FILE:-@use_response_file_by_default@}" >= 1 )); then
-    exec "$prog" @<(printf "%q\n" \
+    responseFile=$(@coreutils_bin@/bin/mktemp "${TMPDIR:-/tmp}/swiftc-params.XXXXXX")
+    trap '@coreutils_bin@/bin/rm -f -- "$responseFile"' EXIT
+    printf "%q\n" \
        ${extraBefore+"${extraBefore[@]}"} \
        ${params+"${params[@]}"} \
-       ${extraAfter+"${extraAfter[@]}"})
+       ${extraAfter+"${extraAfter[@]}"} > "$responseFile"
+    @prog@ "@$responseFile"
 else
-    exec "$prog" \
+    exec @prog@ \
        ${extraBefore+"${extraBefore[@]}"} \
        ${params+"${params[@]}"} \
        ${extraAfter+"${extraAfter[@]}"}

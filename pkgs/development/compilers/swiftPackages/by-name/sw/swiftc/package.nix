@@ -1,17 +1,20 @@
 {
   lib,
-  apple-sdk_14,
   apple-sdk_26,
+  buildEnv,
   cmake,
   darwin,
   fetchFromGitHub,
   fetchpatch2,
+  gcc,
+  libc,
   libedit,
   llvm_libtool,
   libffi,
   libuuid,
   libxml2,
   llvmPackages,
+  llvmPackages_current,
   ninja_1_11,
   perl,
   python3,
@@ -23,6 +26,7 @@
   swift-syntax,
   swift_release,
   swift-bootstrap ? null,
+  wrapBintoolsWith,
   xcbuild,
   srcOnly,
   xz,
@@ -64,10 +68,10 @@ let
   getHostTarget = lib.mapAttrs (_: pkg: pkg.__spliced.hostTarget or pkg);
 
   # SDK versions past 14.x don’t work with the c++-based bootstrap compiler due to unconditionally exposing macros.
-  apple-sdk = if bootstrapStage == 2 then apple-sdk_26 else apple-sdk_14;
+  apple-sdk = apple-sdk_26;
   # These are different because the 14.4 SDK is only good enough for building Swift. Using it when building other
   # packages good enough for building Swift usually results in `swift-frontend` crashes.
-  propagated-sdk = if bootstrapStage > 0 then apple-sdk_26 else apple-sdk_14;
+  propagated-sdk = apple-sdk_26;
 
   buildHostPackages = getBuildHost args;
   hostTargetPackages = getHostTarget args;
@@ -79,6 +83,11 @@ let
     clang-unwrapped
     llvm
     ;
+
+  lld = wrapBintoolsWith {
+    libc = hostTargetPackages.libc;
+    bintools = buildHostPackages.llvmPackages_current.lld;
+  };
 
   inherit (hostTargetPackages)
     stdlib
@@ -106,17 +115,10 @@ let
 
   inherit (darwin) sigtool;
 
-  # Swift requires three bootstrap stages (in addition to the bootstrapping it does on its own).
-  # - Stage 0 builds a minimal Swift compiler using only C++.
-  # - Stage 1 builds a Swift compiler using the stage 0 Swift compiler. Features needed to build macros are enabled.
+  # Swift requires two bootstrap stages:
+  # - Stage 1 builds a Swift compiler using the upstream binaries. Features needed to build macros are enabled.
   # - Stage 2 builds a full Swift compiler using the stage 1 compiler.
-  bootstrapStage =
-    if swift-bootstrap == null then
-      0
-    else if lib.hasSuffix "cxx_bootstrap" (lib.getName swift-bootstrap) then
-      1
-    else
-      2;
+  bootstrapStage = if lib.hasPrefix "swift-bin" (lib.getName swift-bootstrap) then 1 else 2;
 
   doCheck = bootstrapStage > 0;
 
@@ -143,6 +145,22 @@ let
       patches
       stdenv
       ;
+  };
+
+  cxxlib = if stdenv.cc.libcxx == null then hostTargetPackages.gcc else stdenv.cc.libcxx;
+
+  sdk = buildEnv {
+    name = "sdk-${lib.version}";
+    paths = [
+      (lib.getInclude cxxlib)
+      (lib.getInclude hostTargetPackages.libc)
+      (lib.getLib swift-bootstrap)
+    ];
+    pathsToLink = [
+      "/include"
+      "/lib"
+    ];
+    extraPrefix = "/usr";
   };
 in
 
@@ -175,14 +193,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     # ClangImporter needs help finding the location of libc++.
-    ./patches/0001-clang-importer-libcxx.patch
+    #     ./patches/0001-clang-importer-libcxx.patch
     # Find the location of libc++ from `nix-support` instead of probing for it.
-    ./patches/0002-cmake-libcxx-flags.patch
+    #     ./patches/0002-cmake-libcxx-flags.patch
     # Backport linking against an external swift-cmark.
     # From https://github.com/swiftlang/swift/pull/70791.
     ./patches/0003-cmark-build-revamp.patch
     # ClangImporter needs help dealing with separate glibc and libstdc++ paths on Linux.
-    ./patches/0004-linux-fix-libc-paths.patch
+    #    ./patches/0004-linux-fix-libc-paths.patch
     # Resolve any symlinks when adding rpaths. This is helpful to avoid pulling in the whole Swift closure when only
     # the stdlib is needed.
     ./patches/0005-resolve-rpath-symlinks.patch
@@ -201,14 +219,14 @@ stdenv.mkDerivation (finalAttrs: {
       url = "https://github.com/swiftlang/swift/commit/a5c727125e952839c373fe47e9f9e359db3d4d38.patch";
       hash = "sha256-004zzB93Kr/kghQCxJ9gFDkWksvtML0ZDsV9d+tEKq0=";
     })
-  ]
-  ++ lib.optionals (bootstrapStage < 2) [
-    # Revert optimizer changes that cause the C++-based bootstrap compiler to be unable to compile functions with
-    # infinite loops that return from the loop. This doesn’t affect the later stages, so it’s applied conditionally.
-    # https://github.com/swiftlang/swift/pull/79186
-    ./patches/0008-revert-optimizer-changes.patch
-    # Work around a compiler crash by partially reverting https://github.com/swiftlang/swift/pull/80920.
-    ./patches/0009-siloptimizer-bootstrap-workaround.patch
+    #  ]
+    #  ++ lib.optionals (bootstrapStage < 2) [
+    #    # Revert optimizer changes that cause the C++-based bootstrap compiler to be unable to compile functions with
+    #    # infinite loops that return from the loop. This doesn’t affect the later stages, so it’s applied conditionally.
+    #    # https://github.com/swiftlang/swift/pull/79186
+    #    ./patches/0008-revert-optimizer-changes.patch
+    #      # Work around a compiler crash by partially reverting https://github.com/swiftlang/swift/pull/80920.
+    #      ./patches/0009-siloptimizer-bootstrap-workaround.patch
   ];
 
   postPatch = ''
@@ -282,11 +300,17 @@ stdenv.mkDerivation (finalAttrs: {
     # Tests should only be built when building a regular compiler. The bootstrap compiler is not functional enough.
     (lib.cmakeBool "SWIFT_INCLUDE_TESTS" (doCheck && bootstrapStage != 2))
   ]
-  ++ lib.optionals (bootstrapStage == 1) [
-    # Work around crashes in ownership verifier in the bootstrap compiler.
-    # See https://github.com/swiftlang/swift/issues/84552#issuecomment-3409245634
-    "-DCMAKE_Swift_FLAGS=-Xfrontend -disable-sil-ownership-verifier"
-  ]
+#    ++ lib.optionals (bootstrapStage == 1) [
+#      # Work around C++ interop limitations on Linux when building with an external sysroot.
+#      # See https://github.com/swiftlang/swift/issues/75344
+#      "-DCMAKE_Swift_FLAGS=-Xfrontend -no-verify-emitted-module-interface"
+#    ]
+#  ++ lib.optionals (bootstrapStage == 1) [
+#    # The upstream binaries used to bootstrap don’t know how to find libc and the C++ library in Nixpkgs.
+#    # Give it an SDK with these symlinked into place, so that it can find them and inject the appropriate module maps.
+#    (lib.cmakeFeature "CMAKE_SYSROOT" (toString sdk))
+#    (lib.cmakeFeature "SWIFT_PATH_TO_SWIFT_SDK" (toString sdk))
+#  ]
   ++ lib.optionals (bootstrapStage >= 1) [
     # These features are needed for the final build due to using unguarded macros in the SDK required to build it.
     (lib.cmakeBool "SWIFT_BUILD_SWIFT_SYNTAX" true)
@@ -296,8 +320,8 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ lib.optionals (bootstrapStage >= 2) [
     # Build Swift with LTO for better performance. Thin LTO is used instead of full LTO because full LTO is too slow.
-    #    (lib.cmakeFeature "SWIFT_TOOLS_ENABLE_LTO" "thin")
-    #    (lib.cmakeFeature "SWIFT_STDLIB_ENABLE_LTO" "thin")
+    (lib.cmakeFeature "SWIFT_TOOLS_ENABLE_LTO" "thin")
+    (lib.cmakeFeature "SWIFT_STDLIB_ENABLE_LTO" "thin")
     # Enable the remaining features
     (lib.cmakeBool "SWIFT_ENABLE_BACKTRACING" true)
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_CXX_INTEROP" true)
@@ -317,6 +341,7 @@ stdenv.mkDerivation (finalAttrs: {
     NIX_CC_WRAPPER_SUPPRESS_TARGET_WARNING = true;
     # Swift compiles some of its stdlib for older deployment targets.
     NIX_CFLAGS_COMPILE = "-Wno-error=unguarded-availability";
+    NIX_CFLAGS_LINK = "-fuse-ld=lld";
   };
 
   preConfigure =
@@ -329,8 +354,20 @@ stdenv.mkDerivation (finalAttrs: {
       fi
     ''
     + lib.optionalString (swift-driver != null) ''
-      appendToVar cmakeFlags "-DSWIFT_EARLY_SWIFT_DRIVER_BUILD:PATH=${lib.escapeShellArg (lib.getBin swift-driver)}/bin"
+      appendToVar cmakeFlags "-DSWIFT_EARLY_SWIFT_DRIVER_BUILD:PATH=${lib.escapeShellArg (lib.getBin swift-bootstrap)}/bin"
     ''
+        + lib.optionalString (stdenv.hostPlatform.isLinux && bootstrapStage == 1) ''
+        appendToVar cmakeFlags "-DCMAKE_Swift_FLAGS=-module-cache-path $NIX_BUILD_TOP/module-cache"
+    #      # Work around the fact that upstream binaries don’t know how to find libc in Nixpkgs.
+    #      export SYSROOT=$NIX_BUILD_TOP/sysroot
+    #      mkdir -p "$SYSROOT/usr/include"
+    #      for header in ${lib.escapeShellArg (lib.getInclude hostTargetPackages.libc)}/include/*; do
+    #        ln -s "$header" "$SYSROOT/usr/include/$(basename "$header")"
+    #      done
+    #      ln -s ${lib.escapeShellArg (lib.getInclude hostTargetPackages.gcc)}/include/c++ "$SYSROOT/usr/include/c++"
+    #      ln -s ${lib.escapeShellArg (lib.getLib swift-bootstrap)}/lib "$SYSROOT/usr/lib"
+          export NIX_SWIFTFLAGS_COMPILE="-sdk ${lib.escapeShellArg sdk}"
+        ''
     + lib.optionalString (bootstrapStage >= 1) ''
       appendToVar cmakeFlags "-DSWIFT_PATH_TO_STRING_PROCESSING_SOURCE:PATH=$NIX_BUILD_TOP/swift-experimental-string-processing"
       appendToVar cmakeFlags "-DSWIFT_PATH_TO_SWIFT_SYNTAX_SOURCE:PATH=$NIX_BUILD_TOP/swift-syntax"
@@ -360,6 +397,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     cmake
+    lld
     ninja
     perl # For pod2man
     python3
