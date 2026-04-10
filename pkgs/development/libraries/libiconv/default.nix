@@ -47,10 +47,12 @@ stdenv.mkDerivation (finalAttrs: {
   # https://github.com/NixOS/nixpkgs/pull/192630#discussion_r978985593
   hardeningDisable = lib.optional (stdenv.hostPlatform.libc == "bionic") "fortify";
 
-  setupHooks = [
-    ../../../build-support/setup-hooks/role.bash
-    ./setup-hook.sh
-  ];
+  setupHooks =
+    # Match the default behavior on Darwin, which does not automatically link libiconv.
+    lib.optionals (!enableDarwinABICompat) [
+      ../../../build-support/setup-hooks/role.bash
+      ./setup-hook.sh
+    ];
 
   postPatch =
     lib.optionalString
