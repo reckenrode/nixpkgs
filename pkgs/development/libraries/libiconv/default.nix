@@ -2,6 +2,7 @@
   fetchurl,
   stdenv,
   lib,
+  darwin,
   gperf,
   updateAutotoolsGnuConfigScriptsHook,
   enableStatic ? stdenv.hostPlatform.isStatic,
@@ -11,7 +12,13 @@
 
 # assert !stdenv.hostPlatform.isLinux || stdenv.hostPlatform != stdenv.buildPlatform; # TODO: improve on cross
 
-stdenv.mkDerivation (finalAttrs: {
+let
+  # libiconv is propagated by the SDK in the stdenv. Avoid an infinite recursion by using a stdenv
+  # with an SDK that does not try to propagate it.
+  stdenv' = if stdenv.hostPlatform.isDarwin then darwin.bootstrapStdenv else stdenv;
+in
+
+stdenv'.mkDerivation (finalAttrs: {
   pname = "libiconv";
   version = "1.19";
 
