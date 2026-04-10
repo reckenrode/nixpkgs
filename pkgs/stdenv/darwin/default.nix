@@ -196,6 +196,7 @@ let
       ed
       expat
       flex
+      gperf
       groff
       jq
       kyua
@@ -271,6 +272,7 @@ let
     inherit (prevStage)
       bashNonInteractive
       gettext
+      libiconvReal
       libpng
       libxml2
       libxo
@@ -284,7 +286,6 @@ let
     inherit (prevStage.darwin)
       adv_cmds
       copyfile
-      libiconv
       libresolv
       libsbuf
       libutil
@@ -549,9 +550,6 @@ assert bootstrapTools.passthru.isFromBootstrapFiles or false; # sanity check
 
         # Use this stage’s CF to build CMake. It’s required but can’t be included in the stdenv.
         cmake = self.cmakeMinimal;
-
-        # Use libiconvReal with gettext to break an infinite recursion.
-        gettext = super.gettext.override { libiconv = super.libiconvReal; };
 
         # Disable grep’s tests for now due to impure locale updates in
         # macOS 15.4 breaking them in the bootstrap.
@@ -1039,6 +1037,7 @@ assert bootstrapTools.passthru.isFromBootstrapFiles or false; # sanity check
               ld64.lib
               ld64.out
               libffi.out
+              libiconv.out
               libxml2.out
               ncurses.dev
               ncurses.man
@@ -1064,7 +1063,6 @@ assert bootstrapTools.passthru.isFromBootstrapFiles or false; # sanity check
             binutils
             binutils.bintools
             libcxx
-            libiconv.out
             libresolv.out
             libsbuf.out
             libSystem

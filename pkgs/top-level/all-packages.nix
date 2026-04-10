@@ -5583,8 +5583,6 @@ with pkgs;
       ]
     then
       libcIconv pkgs.libc
-    else if stdenv.hostPlatform.isDarwin then
-      darwin.libiconv
     else
       libiconvReal;
 
