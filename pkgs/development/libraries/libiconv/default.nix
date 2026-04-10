@@ -2,6 +2,7 @@
   fetchurl,
   stdenv,
   lib,
+  darwin,
   updateAutotoolsGnuConfigScriptsHook,
   enableStatic ? stdenv.hostPlatform.isStatic,
   enableShared ? !stdenv.hostPlatform.isStatic,
@@ -10,7 +11,12 @@
 
 # assert !stdenv.hostPlatform.isLinux || stdenv.hostPlatform != stdenv.buildPlatform; # TODO: improve on cross
 
-stdenv.mkDerivation (finalAttrs: {
+let
+  # libiconv is propagated by the SDK in the stdenv. Avoid an infinite recursion by using a stdenv
+  # with an SDK that does not try to propagate it.
+  stdenv' = if stdenv.hostPlatform.isDarwin then darwin.bootstrapStdenv else stdenv;
+in
+stdenv'.mkDerivation (finalAttrs: {
   pname = "libiconv";
   version = "1.19";
 
@@ -128,6 +134,6 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "iconv";
 
     # This library is not needed on GNU platforms.
-    hydraPlatforms = with lib.platforms; cygwin ++ darwin ++ freebsd;
+    hydraPlatforms = lib.platforms.cygwin ++ lib.platforms.darwin ++ lib.platforms.freebsd;
   };
 })
