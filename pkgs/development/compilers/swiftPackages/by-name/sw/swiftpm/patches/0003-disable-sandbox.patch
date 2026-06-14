@@ -1,7 +1,7 @@
-From ba494434187ba751e52547a6a0f0c7a323a4eb46 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sat, 13 Dec 2025 22:57:33 -0500
-Subject: [PATCH] disable-sandbox
+Subject: [PATCH 03/10] disable-sandbox
 
 ---
  Sources/Basics/Sandbox.swift | 22 ++++++++++++----------
@@ -43,5 +43,5 @@ index f24636cac..8b65b2489 100644
  
      /// Basic strictness level of a sandbox applied to a command line.
 -- 
-2.50.1
+2.54.0
 

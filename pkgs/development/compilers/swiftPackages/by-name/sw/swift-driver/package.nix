@@ -6,18 +6,20 @@
   ninja,
   stdenv,
   swift-argument-parser,
+  swift-corelibs-libdispatch,
+  swift-foundation,
   swift-llbuild,
-  swift-no-swift-driver,
+  swift-minimal,
   swift-tools-support-core,
   swift_release,
 }:
 
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
+  # Swift Driver requires Dispatch and Foundation.
+  swift = swift-minimal.override { inherit swift-corelibs-libdispatch swift-foundation; };
 in
 
-# Swift Driver is a dependency of SwiftPM.
-# It must be built with CMake to avoid dependency cycles. It can’t be built with swift-driver for obvious reasons.
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-driver";
   version = swift_release;
@@ -38,10 +40,10 @@ stdenv.mkDerivation (finalAttrs: {
   patches = [
     ./patches/0001-gnu-install-dirs.patch
     # Adjust the built libraries to match the way SwiftPM would build the Swift Compiler Driver.
-    ./patches/0002-match-swiftpm-products.patch
-    # Resolve any symlinks when adding rpaths. This is helpful to avoid pulling in the whole Swift closure when only
-    # the stdlib is needed.
-    ./patches/0003-resolve-rpath-symlinks.patch
+    ./patches/0002-Match-SwiftPM-products-when-building-with-CMake.patch
+    # Align Swift Driver’s subcommand lookup behavior with the legacy/C++ frontend. Nixpkgs needs this because it
+    # builds and installs SwiftPM separately from the rest of the Swift toolchain. Otherwise, `swift build` will fail.
+    ./patches/0003-Search-PATH-for-subcommands.patch
   ];
 
   strictDeps = true;
@@ -54,7 +56,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift-no-swift-driver
+    swift
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [ llvm_libtool ];
 
@@ -66,18 +68,47 @@ stdenv.mkDerivation (finalAttrs: {
 
   env.NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isDarwin "-headerpad_max_install_names";
 
+  #  preInstall = lib.optionalString stdenv.hostPlatform.isLinux ''
+  #    # Rpaths get messed up during build with duplicated ::s that confuses CMake’s install phase.
+  #    for f in bin/swift-driver lib/libSwiftDriver.so; do
+  #      rpaths=$(patchelf --print-rpath "$f")
+  #      patchelf --set-rpath "''${rpaths/::/:}" "$f"
+  #    done
+  #  '';
+
   postInstall = ''
+    mkdir -p "''${!outputDev}/lib/swift/${swiftPlatform}" "''${!outputLib}/lib"
+
+    # Install the SwiftOptions static library (needed by Swift Build).
+    cp -v lib/libSwiftOptions.a "''${!outputLib}/lib"
+
     # Install the swiftmodule.
-    mkdir -p "''${!outputDev}/lib/swift/${swiftPlatform}"
     cp -v swift/*.swiftmodule "''${!outputDev}/lib/swift/${swiftPlatform}"
 
     # Install CMake config file for the Swift Compiler Driver library.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/SwiftDriver"
+    mkdir -p "''${!outputDev}/lib/cmake/SwiftDriver"
     substitute ${./files/SwiftDriverConfig.cmake} "''${!outputDev}/lib/cmake/SwiftDriver/SwiftDriverConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
-      --replace-fail '@include@' "''${!outputDev}" \
+      --replace-fail '@dev@' "''${!outputDev}" \
       --replace-fail '@lib@' "''${!outputLib}" \
       --replace-fail '@swiftPlatform@' ${swiftPlatform}
+  ''
+  # For some reason, these rpaths get dropped during installation phase on Linux.
+  + lib.optionalString stdenv.hostPlatform.isLinux ''
+    for f in "$out/bin/"* "$lib/lib/"*; do
+      if isELF "$f"; then
+        patchelf --add-rpath ${
+          lib.escapeShellArg (
+            lib.makeLibraryPath [
+              swift-argument-parser
+              swift-tools-support-core
+              swift-llbuild
+            ]
+          )
+        } "$f"
+        patchelf --force-rpath "$f" # Otherwise, libswiftSynchronization.so won’t be found.
+      fi
+    done
   '';
 
   __structuredAttrs = true;

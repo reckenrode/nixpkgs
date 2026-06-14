@@ -131,6 +131,8 @@ stdenvNoCC.mkDerivation (
     outputHash = hash;
     outputHashAlgo = if hash == "" then "sha256" else null;
     outputHashMode = "recursive";
+
+    __structuredAttrs = true;
   }
   // builtins.removeAttrs args removedArgs
 )

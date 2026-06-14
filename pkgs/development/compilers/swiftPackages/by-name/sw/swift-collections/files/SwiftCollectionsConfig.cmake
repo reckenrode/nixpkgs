@@ -19,4 +19,3 @@ foreach(CollectionModule ${CollectionModules})
         INTERFACE_INCLUDE_DIRECTORIES "@include@/lib/swift/@swiftPlatform@"
     )
 endforeach()
-

@@ -1,7 +1,7 @@
-From a6e175040d74cc8b74077f689690e043572d8616 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sat, 13 Dec 2025 22:57:55 -0500
-Subject: [PATCH] fix-backdeploy-rpath
+Subject: [PATCH 04/10] fix-backdeploy-rpath
 
 ---
  Sources/Build/BuildDescription/ProductBuildDescription.swift | 5 ++---
@@ -52,5 +52,5 @@ index 3bbb62cb6..dc0ca4c0e 100644
                      try AsyncProcess.checkNonZeroExit(arguments: [outputPath.pathString])
                  }
 -- 
-2.50.1
+2.54.0
 

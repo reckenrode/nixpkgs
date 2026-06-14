@@ -1,15 +1,16 @@
 {
   lib,
-  fetchFromGitHub,
   cmake,
+  fetchFromGitHub,
+  fetchpatch2,
   ninja,
-  swift,
   stdenv,
+  swift,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-system";
-  version = "1.6.4";
+  version = "1.7.2";
 
   outputs = [
     "out"
@@ -20,10 +21,17 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-system";
     tag = finalAttrs.version;
-    hash = "sha256-bfxm2WS+4qcgSzheWTvRloDAIIIHzPZ8SaAZq9bWmSc=";
+    hash = "sha256-Gz+AljaS+/f9eK/jOTOdlOsrnyolgdPE+71TqfPpVts=";
   };
 
-  patches = [ ./patches/0001-gnu-install-dirs.patch ];
+  patches = [
+    ./patches/0001-gnu-install-dirs.patch
+    # Install missing headers
+    (fetchpatch2 {
+      url = "https://github.com/apple/swift-system/commit/776989a95523068065d4e9f7904c62eceb48c183.patch?full_index=1";
+      hash = "sha256-LRS2q2iiap0rmQXQV4NETpYVO518nqBKtKSDTCRwVBM=";
+    })
+  ];
 
   strictDeps = true;
 
@@ -42,10 +50,13 @@ stdenv.mkDerivation (finalAttrs: {
     moveToOutput lib/swift "''${!outputDev}"
     moveToOutput lib/swift_static "''${!outputDev}"
 
+    # This isn’t installed by the upstream CMake files, but it’s needed.
+    cp lib/libCSystem.a "$out/lib/libCSystem.a"
+
     # Install CMake config file for Swift System.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/SwiftSystem"
+    mkdir -p "''${!outputDev}/lib/cmake/SwiftSystem"
     substitute ${./files/SwiftSystemConfig.cmake} "''${!outputDev}/lib/cmake/SwiftSystem/SwiftSystemConfig.cmake" \
-      --replace-fail '@include@' "''${!outputDev}" \
+      --replace-fail '@dev@' "''${!outputDev}" \
       --replace-fail '@lib@' "''${!outputLib}" \
       --replace-fail '@swiftPlatform@' ${stdenv.hostPlatform.swift.platform}
   '';

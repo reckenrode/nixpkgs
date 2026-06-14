@@ -6,7 +6,7 @@
   lld,
   ninja,
   stdenv,
-  swift,
+  swift-minimal,
   swift-corelibs-libdispatch,
   swift_release,
   useSwift ? true,
@@ -14,6 +14,18 @@
 
 let
   swift-corelibs-libdispatch-no-overlay = swift-corelibs-libdispatch.override { useSwift = false; };
+
+  swift-corelibs-libdispatch-no-overlay-lib =
+    if useSwift then
+      lib.escapeShellArg (lib.getLib swift-corelibs-libdispatch-no-overlay)
+    else
+      placeholder "out";
+
+  swift-corelibs-libdispatch-no-overlay-dev =
+    if useSwift then
+      lib.escapeShellArg (lib.getDev swift-corelibs-libdispatch-no-overlay)
+    else
+      placeholder "dev";
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-corelibs-libdispatch${lib.optionalString useSwift "-swift-overlay"}";
@@ -33,6 +45,7 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   patches = [
+    ./patches/0001-gnu-install-dirs.patch
     # Fixes `implicit conversion changes signedness` error.
     (fetchpatch2 {
       url = "https://github.com/swiftlang/swift-corelibs-libdispatch/commit/38872e2d44d66d2fb94186988509defc734888a5.patch?full_index=1";
@@ -51,23 +64,44 @@ stdenv.mkDerivation (finalAttrs: {
     cmake
     ninja
   ]
-  ++ lib.optionals useSwift [ swift ]
+  ++ lib.optionals useSwift [ swift-minimal ]
   ++ lib.optionals stdenv.hostPlatform.isWindows [ lld ];
 
   postInstall = ''
+    libExt=${stdenv.hostPlatform.extensions.library}
+
     # Provide a CMake module. This is primarily used to glue together parts of
     # the Swift toolchain. Modifying the CMake config to do this for us is
     # otherwise more trouble.
     mkdir -p "''${!outputDev}/lib/cmake/dispatch"
-    export dylibExt="${stdenv.hostPlatform.extensions.sharedLibrary}"
-    substituteAll ${./files/dispatchConfig.cmake} "''${!outputDev}/lib/cmake/dispatch/dispatchConfig.cmake"
+    substitute ${./files/dispatchConfig.cmake} "''${!outputDev}/lib/cmake/dispatch/dispatchConfig.cmake" \
+      --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
+      --replace-fail '@swiftPlatform@' ${stdenv.hostPlatform.swift.platform} \
+      --replace-fail '@lib@' ${swift-corelibs-libdispatch-no-overlay-lib} \
+      --replace-fail '@dev@' ${swift-corelibs-libdispatch-no-overlay-dev} \
+      --replace-fail '@out-swift@' "$out" \
+      --replace-fail '@dev-swift@' "''${!outputDev}"
   ''
-  + lib.optionalString useSwift ''
-    rm "''${!outputLib}/lib"/*"$dylibExt"
-    for dylib in ${lib.escapeShellArg (lib.getLib swift-corelibs-libdispatch-no-overlay)}/lib/*"$dylibExt"; do
-      ln -s "$dylib" "''${!outputLib}/lib/$(basename "$dylib")"
-    done
-  '';
+  + lib.optionalString useSwift (
+    ''
+      mkdir -p "$dev/nix-support" "$man"
+
+      moveToOutput lib/swift "''${!outputDev}"
+
+      # Rely on `propagated-build-inputs` to propagate the non-Swift shared libraries,
+      # so with or without overlay uses the same ones.
+      rm "''${!outputLib}/lib/libdispatch$libExt" "''${!outputLib}/lib/libBlocksRuntime$libExt"
+
+      ln -s ${lib.escapeShellArg (lib.getMan swift-corelibs-libdispatch-no-overlay)}/* "$man"
+
+      echo -n ${swift-corelibs-libdispatch-no-overlay-dev} >> "$dev/nix-support/propagated-build-inputs"
+    ''
+    # Clean up the rpaths to reference the non-overlay shared libraries.
+    + lib.optionalString stdenv.hostPlatform.isElf ''
+      dylib="''${!outputLib}/lib/libswiftDispatch${stdenv.hostPlatform.extensions.sharedLibrary}"
+      patchelf --add-rpath ${swift-corelibs-libdispatch-no-overlay-lib}/lib "$dylib"
+    ''
+  );
 
   __structuredAttrs = true;
 

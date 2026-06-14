@@ -7,12 +7,16 @@
   ninja,
   sqlite,
   stdenv,
-  swift-no-swift-driver,
+  swift-corelibs-libdispatch,
+  swift-foundation,
+  swift-minimal,
   swift_release,
 }:
 
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
+  # swift-llbuild requires Foundation and Dispatch.
+  swift = swift-minimal.override { inherit swift-corelibs-libdispatch swift-foundation; };
 in
 
 # LLBuild is a dependency to both Swift Compiler Driver and SwiftPM.
@@ -71,7 +75,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift-no-swift-driver
+    swift
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [ fixDarwinDylibNames ];
 
@@ -90,10 +94,10 @@ stdenv.mkDerivation (finalAttrs: {
     cp -v products/llbuildSwift/llbuildSwift.swiftmodule "''${!outputDev}/lib/swift/${swiftPlatform}"
 
     # Install CMake config file for llbuild and llbuildSwift.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/LLBuild"
+    mkdir -p "''${!outputDev}/lib/cmake/LLBuild"
     substitute ${./files/LLBuildConfig.cmake} "''${!outputDev}/lib/cmake/LLBuild/LLBuildConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
-      --replace-fail '@include@' "''${!outputDev}" \
+      --replace-fail '@dev@' "''${!outputDev}" \
       --replace-fail '@lib@' "''${!outputLib}" \
       --replace-fail '@swiftPlatform@' ${swiftPlatform}
   '';

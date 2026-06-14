@@ -1,12 +1,12 @@
-From 9e1e1beea700d92270e0cada04d4b76986ab0ae3 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sat, 13 Dec 2025 22:59:57 -0500
-Subject: [PATCH] add-missing-libraries
+Subject: [PATCH 09/10] add-missing-libraries
 
 ---
  Sources/PackageSigning/CMakeLists.txt    | 1 +
- Sources/SwiftBuildSupport/CMakeLists.txt | 1 +
- 2 files changed, 2 insertions(+)
+ Sources/SwiftBuildSupport/CMakeLists.txt | 2 ++
+ 2 files changed, 3 insertions(+)
 
 diff --git a/Sources/PackageSigning/CMakeLists.txt b/Sources/PackageSigning/CMakeLists.txt
 index 13a7b8cd5..d00c7d01e 100644
@@ -21,7 +21,7 @@ index 13a7b8cd5..d00c7d01e 100644
    TSCUtility
    X509)
 diff --git a/Sources/SwiftBuildSupport/CMakeLists.txt b/Sources/SwiftBuildSupport/CMakeLists.txt
-index 3bd426bbf..2beb6d457 100644
+index 3bd426bbf..c926ab811 100644
 --- a/Sources/SwiftBuildSupport/CMakeLists.txt
 +++ b/Sources/SwiftBuildSupport/CMakeLists.txt
 @@ -19,6 +19,7 @@ add_library(SwiftBuildSupport STATIC
@@ -32,6 +32,14 @@ index 3bd426bbf..2beb6d457 100644
    Build
    DriverSupport
    TSCBasic
+@@ -26,6 +27,7 @@ target_link_libraries(SwiftBuildSupport PUBLIC
+   PackageGraph
+   SwiftBuild::SwiftBuild
+   SwiftBuild::SWBBuildService
++  SwiftSystem::SystemPackage
+ )
+ 
+ set_target_properties(SwiftBuildSupport PROPERTIES
 -- 
-2.50.1
+2.54.0
 

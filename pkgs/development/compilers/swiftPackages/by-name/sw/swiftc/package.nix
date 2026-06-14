@@ -13,6 +13,7 @@
   libxml2,
   llvmPackages,
   ninja_1_11,
+  overrideCC,
   perl,
   python3,
   replaceVars,
@@ -23,6 +24,7 @@
   swift-syntax,
   swift_release,
   swift-bootstrap ? null,
+  sysroot,
   xcbuild,
   srcOnly,
   xz,
@@ -64,13 +66,19 @@ let
   getHostTarget = lib.mapAttrs (_: pkg: pkg.__spliced.hostTarget or pkg);
 
   # SDK versions past 14.x don’t work with the c++-based bootstrap compiler due to unconditionally exposing macros.
-  apple-sdk = if bootstrapStage == 2 then apple-sdk_26 else apple-sdk_14;
+  build-sdk = if bootstrapStage == 2 then apple-sdk_26 else apple-sdk_14;
   # These are different because the 14.4 SDK is only good enough for building Swift. Using it when building other
   # packages good enough for building Swift usually results in `swift-frontend` crashes.
   propagated-sdk = if bootstrapStage > 0 then apple-sdk_26 else apple-sdk_14;
 
   buildHostPackages = getBuildHost args;
   hostTargetPackages = getHostTarget args;
+
+  swift-bootstrap =
+    if stdlib != null then
+      args.swift-bootstrap.override { stdlib = buildHostPackages.stdlib; }
+    else
+      args.swift-bootstrap;
 
   swift-driver = swift-bootstrap.swift-driver or null;
 
@@ -79,6 +87,9 @@ let
     clang-unwrapped
     llvm
     ;
+
+  # Get libc++ from the sysroot. Even if they’re the same headers, having them in multiple places breaks things.
+#  clang = buildHostPackages.llvmPackages.clang.override { libcxx = null; };
 
   inherit (hostTargetPackages)
     stdlib
@@ -144,8 +155,15 @@ let
       stdenv
       ;
   };
+#
+#  buildSysroot = hostTargetPackages.sysroot.override { apple-sdk = build-sdk; };
+#  propagatedSysroot = hostTargetPackages.sysroot.override { apple-sdk = propagated-sdk; };
+#
+#  stdenv' = (overrideCC stdenv (stdenv.cc.override { libcxx = null; })).override {
+#    extraBuildInputs = [ buildSysroot ];
+#    allowedRequisites = null;
+#  };
 in
-
 stdenv.mkDerivation (finalAttrs: {
   pname =
     "swiftc"
@@ -155,7 +173,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   outputs = [
     "out"
-    #    "lib"
     "dev"
     "doc"
     "man"
@@ -174,33 +191,32 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   patches = [
-    # ClangImporter needs help finding the location of libc++.
-    ./patches/0001-clang-importer-libcxx.patch
-    # Find the location of libc++ from `nix-support` instead of probing for it.
-    ./patches/0002-cmake-libcxx-flags.patch
+    # ClangImporter needs help finding the location of libc and libc++ (and using it).
+    ./patches/0001-Read-C-and-C-stdlib-flags-from-the-wrapped-compiler.patch
+    ./patches/0002-Use-Nixpkgs-C-and-C-stdlib-paths-in-ClangImporter.patch
     # Backport linking against an external swift-cmark.
     # From https://github.com/swiftlang/swift/pull/70791.
     ./patches/0003-cmark-build-revamp.patch
-    # ClangImporter needs help dealing with separate glibc and libstdc++ paths on Linux.
-    ./patches/0004-linux-fix-libc-paths.patch
-    # Resolve any symlinks when adding rpaths. This is helpful to avoid pulling in the whole Swift closure when only
-    # the stdlib is needed.
-    ./patches/0005-resolve-rpath-symlinks.patch
     # Fix compilation errors when building the SIL module during bootstrap.
     # error: field has incomplete type 'clang::DeclContext::all_lookups_iterator'
     # error: field has incomplete type 'clang::DeclContext::ddiag_iterator'
-    ./patches/0006-sil-missing-headers.patch
+    ./patches/0004-sil-missing-headers.patch
     # Use libLTO.dylib from the LLVM built for Swift
-    (replaceVars ./patches/0007-specify-liblto-path.patch {
+    (replaceVars ./patches/0005-specify-liblto-path.patch {
       libllvm_path = lib.getLib libllvm;
     })
     # Use libdispatch from nixpkgs instead of building it in-tree
-    ./patches/0010-use-nixpkgs-libdispatch.patch
+    ./patches/0006-use-nixpkgs-libdispatch.patch
     # Fix missing <cstdint> when building against libstdc++ 15
     (fetchpatch2 {
       url = "https://github.com/swiftlang/swift/commit/a5c727125e952839c373fe47e9f9e359db3d4d38.patch";
       hash = "sha256-004zzB93Kr/kghQCxJ9gFDkWksvtML0ZDsV9d+tEKq0=";
     })
+  ]
+  ++ lib.optionals (bootstrapStage == 1) [
+    # Stage 1 doesn’t have a compiler that supports _StringProcessing.
+    # This isn’t a problem on Darwin, but it fails on Linux.
+    ./patches/0007-Remove-dependency-on-_StringProcessing-during-stage-.patch
   ]
   ++ lib.optionals (bootstrapStage < 2) [
     # Revert optimizer changes that cause the C++-based bootstrap compiler to be unable to compile functions with
@@ -281,6 +297,8 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeFeature "SWIFT_HOST_TRIPLE" stdenv.hostPlatform.swift.triple)
     # Tests should only be built when building a regular compiler. The bootstrap compiler is not functional enough.
     (lib.cmakeBool "SWIFT_INCLUDE_TESTS" (doCheck && bootstrapStage != 2))
+    # Swift Concurrency is needed to build the stage 1 compiler on Linux.
+    (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_CONCURRENCY" true)
   ]
   ++ lib.optionals (bootstrapStage == 1) [
     # Work around crashes in ownership verifier in the bootstrap compiler.
@@ -290,9 +308,10 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals (bootstrapStage >= 1) [
     # These features are needed for the final build due to using unguarded macros in the SDK required to build it.
     (lib.cmakeBool "SWIFT_BUILD_SWIFT_SYNTAX" true)
-    (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_CONCURRENCY" true)
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_OBSERVATION" true)
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_STRING_PROCESSING" true)
+    # Synchronization is required to build Foundation.
+    (lib.cmakeBool "SWIFT_ENABLE_SYNCHRONIZATION" true)
   ]
   ++ lib.optionals (bootstrapStage >= 2) [
     # Build Swift with LTO for better performance. Thin LTO is used instead of full LTO because full LTO is too slow.
@@ -306,7 +325,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_PARSER_VALIDATION" true)
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_POINTER_BOUNDS" true)
     (lib.cmakeBool "SWIFT_ENABLE_EXPERIMENTAL_RUNTIME_MODULE" true)
-    (lib.cmakeBool "SWIFT_ENABLE_SYNCHRONIZATION" true)
     (lib.cmakeBool "SWIFT_ENABLE_VOLATILE" true)
     (lib.cmakeBool "SWIFT_ENABLE_RUNTIME_MODULE" true)
     (lib.cmakeBool "SWIFT_STDLIB_ENABLE_STRICT_AVAILABILITY" true)
@@ -379,7 +397,7 @@ stdenv.mkDerivation (finalAttrs: {
     swift-cmark.out
     zlib
   ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [ apple-sdk ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [ build-sdk ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
     libuuid
     (swift-corelibs-libdispatch.override { useSwift = false; })
@@ -409,14 +427,12 @@ stdenv.mkDerivation (finalAttrs: {
       find "''${!outputLib}/lib/swift/host/compiler" -name '*.dylib' \
         -printf "-change\0''${!outputLib}/lib/swift/host/%f\0%p\0"
     )
-    for output in out lib; do
-      while IFS= read -d "" exe; do
-        if [[ "$exe" != *.a ]] && LC_ALL=C isMachO "$exe"; then
-          res=$(install_name_tool "$exe" "''${args[@]}" 2>&1)
-          if [[ "$res" =~ invalidate ]]; then codesign -s - -f "$exe"; fi
-        fi
-      done < <(find "''${!output}" -type f -print0)
-    done
+    while IFS= read -d "" exe; do
+      if [[ "$exe" != *.a ]] && LC_ALL=C isMachO "$exe"; then
+        res=$(install_name_tool "$exe" "''${args[@]}" 2>&1)
+        if [[ "$res" =~ invalidate ]]; then codesign -s - -f "$exe"; fi
+      fi
+    done < <(find "$out" -type f -print0)
   ''
   # Swift installs some back-deployment and stdlib components as part of the compiler component. Delete them.
   + lib.optionalString (stdlib != null) ''
@@ -442,11 +458,14 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   # Will effectively be `buildInputs` when swift is put in `nativeBuildInputs`.
-  depsTargetTargetPropagated = lib.optionals stdenv.targetPlatform.isDarwin [ propagated-sdk ];
+#  depsTargetTargetPropagated = [ propagatedSysroot ];
+  depsTargetTargetPropagated = lib.optionals stdenv.hostPlatform.isDarwin [ propagated-sdk ];
 
   __structuredAttrs = true;
 
   passthru.supportsMacros = bootstrapStage > 1;
+
+  #  passthru.sysroot = callPackage ./sysroot.nix { apple-sdk = propagated-sdk; };
 
   meta = {
     description = "Swift Programming Language";

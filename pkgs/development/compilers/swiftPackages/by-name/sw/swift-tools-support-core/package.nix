@@ -5,16 +5,18 @@
   llvm_libtool,
   ninja,
   stdenv,
-  swift-no-swift-driver,
+  swift-minimal,
+  swift-corelibs-libdispatch,
+  swift-foundation,
   swift_release,
 }:
 
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
+  # Swift Tools Support Core requires Dispatch and Foundation.
+  swift = swift-minimal.override { inherit swift-corelibs-libdispatch swift-foundation; };
 in
 
-# Swift Tools Support Core is a dependency to both Swift Compiler Driver and SwiftPM.
-# It must be built with CMake and use Swift without swift-driver to avoid dependency cycles.
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-tools-support-core";
   version = swift_release;
@@ -52,7 +54,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift-no-swift-driver
+    swift
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [ llvm_libtool ];
 
@@ -63,15 +65,22 @@ stdenv.mkDerivation (finalAttrs: {
 
     # Install the C module
     mkdir -p "''${!outputDev}/include"
-    cp -v "$NIX_BUILD_TOP/$sourceRoot/Sources/TSCclibc/include"/* "''${!outputDev}/include"
+    cp -v ../Sources/TSCclibc/include/* "''${!outputDev}/include"
 
     # Install CMake config file for the SwiftSupportTools library.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/TSC"
+    mkdir -p "''${!outputDev}/lib/cmake/TSC"
     substitute ${./files/TSCConfig.cmake} "''${!outputDev}/lib/cmake/TSC/TSCConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
-      --replace-fail '@include@' "''${!outputDev}" \
+      --replace-fail '@dev@' "''${!outputDev}" \
       --replace-fail '@lib@' "''${!outputLib}" \
       --replace-fail '@swiftPlatform@' ${swiftPlatform}
+  ''
+  + lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+    libExt=${stdenv.hostPlatform.extensions.staticLibrary}
+    # These are not linked into the shared library and are linked separate only Linux.
+    for libName in TSCBasic TSCLibc; do
+      cp -v lib/lib$libName$libExt "''${!outputLib}/lib/lib$libName$libExt"
+    done
   '';
 
   __structuredAttrs = true;

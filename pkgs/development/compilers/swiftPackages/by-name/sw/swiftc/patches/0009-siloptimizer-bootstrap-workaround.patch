@@ -1,7 +1,7 @@
-From 91f0142a4a86f4c293c42ea27288ceaf525125dc Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:44:49 -0500
-Subject: [PATCH] siloptimizer-bootstrap-workaround
+Subject: [PATCH 9/9] siloptimizer-bootstrap-workaround
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -30,5 +30,5 @@ index f4781b4ca5c..ef99a41d864 100644
  
    // Disable some expensive optimizations if the function is huge.
 -- 
-2.51.2
+2.54.0
 

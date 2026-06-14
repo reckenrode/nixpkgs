@@ -4,19 +4,21 @@
   cmake,
   llvm_libtool,
   ninja,
-  swift-no-swift-driver,
+  swift-foundation,
+  swift-minimal,
   stdenv,
 }:
 
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
+  swift = swift-minimal.override { inherit swift-foundation; }; # Swift Argument Parser requires Foundation.
 in
 
 # Swift Argument Parser is a dependency to both Swift Compiler Driver and SwiftPM.
 # It must be built with CMake and use Swift without swift-driver to avoid dependency cycles.
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-argument-parser";
-  version = "1.7.0";
+  version = "1.8.2";
 
   outputs = [
     "out"
@@ -27,7 +29,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-argument-parser";
     tag = finalAttrs.version;
-    hash = "sha256-1J68vCB4P9MBznK4cPX9TzLQId+r5//45M3C8G6zg+c=";
+    hash = "sha256-BWm2ZbNIvlamNp8cxoicFlAcujjhH22VPzs67lEIXWU=";
   };
 
   patches = [
@@ -45,7 +47,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift-no-swift-driver
+    swift
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [ llvm_libtool ];
 

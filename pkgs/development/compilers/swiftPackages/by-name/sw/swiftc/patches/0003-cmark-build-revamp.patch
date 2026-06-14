@@ -1,7 +1,7 @@
-From e2399cc780162ec385fa9fbde945a04e65b78688 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:38:01 -0500
-Subject: [PATCH] cmark-build-revamp
+Subject: [PATCH 3/9] cmark-build-revamp
 
 ---
  cmake/modules/SwiftSharedCMakeConfig.cmake | 28 ----------------------
@@ -54,5 +54,5 @@ index ff552d65a90..3bbd6a13262 100644
  
    # Enable groups for IDE generators (Xcode and MSVC).
 -- 
-2.51.2
+2.54.0
 

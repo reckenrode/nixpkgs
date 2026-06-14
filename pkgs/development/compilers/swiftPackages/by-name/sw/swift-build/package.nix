@@ -142,7 +142,7 @@ stdenv.mkDerivation (finalAttrs: {
       > "''${!outputDev}/include/module.modulemap"
 
     # Install CMake config file for the Swift Build library.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/SwiftBuild"
+    mkdir -p "''${!outputDev}/lib/cmake/SwiftBuild"
     substitute ${./files/SwiftBuildConfig.cmake} "''${!outputDev}/lib/cmake/SwiftBuild/SwiftBuildConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
       --replace-fail '@include@' "''${!outputDev}" \

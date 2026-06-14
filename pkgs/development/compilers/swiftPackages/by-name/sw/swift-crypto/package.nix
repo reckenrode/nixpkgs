@@ -14,7 +14,7 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-crypto";
-  version = "4.2.0";
+  version = "4.5.0";
 
   outputs = [
     "out"
@@ -25,7 +25,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-crypto";
     tag = finalAttrs.version;
-    hash = "sha256-fdWNuaECRf317rhqTyB7xUTxncYQAd9NwfH3ZGtOflA=";
+    hash = "sha256-vVeVImEmj76ML2bzYTpEhrUuqlxwA4GyIN9KQSA6Zy0=";
   };
 
   patches = [
@@ -64,7 +64,7 @@ stdenv.mkDerivation (finalAttrs: {
     moveToOutput lib/swift_static "''${!outputDev}"
 
     # Install CMake config file for the Swift Crypto library.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/SwiftCrypto"
+    mkdir -p "''${!outputDev}/lib/cmake/SwiftCrypto"
     substitute ${./files/SwiftCryptoConfig.cmake} "''${!outputDev}/lib/cmake/SwiftCrypto/SwiftCryptoConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
       --replace-fail '@include@' "''${!outputDev}" \

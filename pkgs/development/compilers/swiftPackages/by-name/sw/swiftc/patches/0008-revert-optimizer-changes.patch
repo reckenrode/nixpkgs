@@ -1,7 +1,7 @@
-From 401d33ef3c31aa7a924f33c36b9c3fe34e9cdea5 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:40:44 -0500
-Subject: [PATCH] revert-optimizer-changes
+Subject: [PATCH 8/9] revert-optimizer-changes
 
 We need to restore several optimizations that were removed to Swift
 because otherwise the C++-only bootstrap driver will crash when building
@@ -977,5 +977,5 @@ index 92a084c2df5..620718451e7 100644
    // This phase performs optimizations necessary for correct interoperation of
    // Swift os log APIs with C os_log ABIs.
 -- 
-2.51.2
+2.54.0
 

@@ -92,10 +92,15 @@ rec {
 
         # Helper that makes a swiftpm dependency mutable by copying the source.
         swiftpmMakeMutable() {
-          local orig="$(readlink Packages/$1)"
-          rm Packages/$1
-          cp -r "$orig" Packages/$1
-          chmod -R u+w Packages/$1
+          local checkoutDir=$NIX_BUILD_TOP/$sourceRoot/.build/checkouts
+          local orig=$(readlink "Packages/$1")
+
+          mkdir -p "$checkoutDir"
+          cp -r "$orig" "$checkoutDir/$1"
+          chmod -R u+w "$checkoutDir/$1"
+
+          rm "Packages/$1"
+          ln -s "$checkoutDir/$1" "Packages/$1"
         }
       '';
 

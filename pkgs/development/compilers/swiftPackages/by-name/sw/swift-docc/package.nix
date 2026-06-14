@@ -2,9 +2,11 @@
   lib,
   fetchFromGitHub,
   fetchSwiftPMDeps,
+  lmdb,
   stdenv,
   swift,
-  swiftpmHook,
+  swift-lmdb,
+  swiftpm,
   swift_release,
 }:
 
@@ -20,19 +22,36 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   postPatch = ''
-    substituteInPlace Package.swift \
-      --replace-fail '.macOS(.v12)' ".macOS(\"$MACOSX_DEPLOYMENT_TARGET\")"
+    # SignalTests.testTrappingSignal tries to access `/bin/bash`. Replace it with the shell in the stdenv.
+    substituteInPlace Tests/SwiftDocCUtilitiesTests/SignalTests.swift \
+      --replace-fail '/bin/bash' ${lib.escapeShellArg stdenv.shell}
+
+    # SwiftLMDBTests.testVersion checks the LMDB version. Patch it to check for the version in Nixpkgs.
+    substituteInPlace Tests/SwiftDocCTests/Utility/LMDBTests.swift \
+      --replace-fail '0.9.70' ${lib.escapeShellArg (lib.getVersion lmdb)}
   '';
+
+  strictDeps = true;
 
   swiftpmDeps = fetchSwiftPMDeps {
     inherit (finalAttrs) pname version src;
     hash = "sha256-q3PZjzn2Zweyv5q2c4WgSe11FTp6EO3qxR/Qu3fOm6I=";
   };
 
+  swiftpmFlags = [
+    # Otherwise fails to build with `error: module 'SwiftDocC' was not compiled for testing`.
+    "-Xswiftc" "-enable-testing"
+  ];
+
   nativeBuildInputs = [
     swift
-    swiftpmHook
+    swift-lmdb.devendorHook
+    swiftpm
   ];
+
+  doCheck = !stdenv.hostPlatform.isDarwin;
+
+  __structuredAttrs = true;
 
   meta = {
     description = "Documentation compiler for Swift";

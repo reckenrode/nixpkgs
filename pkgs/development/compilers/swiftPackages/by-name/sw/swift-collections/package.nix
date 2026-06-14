@@ -3,13 +3,13 @@
   fetchFromGitHub,
   cmake,
   ninja,
-  swift,
+  swift-minimal,
   stdenv,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-collections";
-  version = "1.3.0";
+  version = "1.6.0";
 
   outputs = [
     "out"
@@ -20,7 +20,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-collections";
     tag = finalAttrs.version;
-    hash = "sha256-Bhfmf02JbmEdM1TFdM8UGxlouR8kr61WlU1uI2v67v8=";
+    hash = "sha256-oLYfOxB4CGH5tTkNOi0IX3iHTO64YBoaFyu+/1I5HNE=";
   };
 
   postPatch = ''
@@ -31,6 +31,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   strictDeps = true;
 
+  cmakeFlags = [
+    # Defaults to not building shared libs on Linux.
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!stdenv.hostPlatform.isStatic))
+  ];
+
   preConfigure = ''
     appendToVar cmakeFlags -DCMAKE_Swift_COMPILER_TARGET=${stdenv.hostPlatform.swift.triple}
     appendToVar cmakeFlags -DCMAKE_Swift_FLAGS=-module-cache-path\ "$NIX_BUILD_TOP/module-cache"
@@ -39,7 +44,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift
+    swift-minimal
   ];
 
   postInstall = ''
@@ -47,7 +52,7 @@ stdenv.mkDerivation (finalAttrs: {
     moveToOutput lib/swift_static "''${!outputDev}"
 
     # Install CMake config file for the Swift Collections library.
-    mkdir -p mkdir -p "''${!outputDev}/lib/cmake/SwiftCollections"
+    mkdir -p "''${!outputDev}/lib/cmake/SwiftCollections"
     substitute ${./files/SwiftCollectionsConfig.cmake} "''${!outputDev}/lib/cmake/SwiftCollections/SwiftCollectionsConfig.cmake" \
       --replace-fail '@buildType@' ${if stdenv.hostPlatform.isStatic then "STATIC" else "SHARED"} \
       --replace-fail '@include@' "''${!outputDev}" \

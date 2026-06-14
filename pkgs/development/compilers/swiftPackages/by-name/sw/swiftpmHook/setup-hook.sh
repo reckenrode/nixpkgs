@@ -82,7 +82,7 @@ swiftpmBinPath() {
     swift-build --show-bin-path "${flagsArray[@]}"
 }
 
-# TODO: Only use install_name_tool on Darwin, support static libraries
+# TODO: Support static libraries.
 swiftpmInstallPhase() {
     runHook preInstall
 
@@ -96,8 +96,10 @@ swiftpmInstallPhase() {
 
     while IFS= read -d "" library; do
         if [ -e "$products/lib$library@sharedLibrary@" ]; then
-            install_name_tool "$products/lib$library@sharedLibrary@" \
-               -id "${!outputLib}/lib/lib$library@sharedLibrary@"
+            if isMachO "$products/lib$library@sharedLibrary@"; then
+                @install_name_tool@ "$products/lib$library@sharedLibrary@" \
+                    -id "${!outputLib}/lib/lib$library@sharedLibrary@"
+            fi
             appendToVar libsToInstall "$products/lib$library@sharedLibrary@"
         fi
         if [ -e "$products/$library.swiftmodule" ]; then

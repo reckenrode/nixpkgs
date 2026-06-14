@@ -52,7 +52,6 @@
   shaderc, # instead of spirv-cross
   stdenv,
   swift,
-  swiftPackages,
   testers,
   vapoursynth,
   vulkan-headers,
@@ -128,11 +127,6 @@ stdenv.mkDerivation (finalAttrs: {
       popd
     ''
   ];
-
-  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin {
-    # Avoid pulling in the full Swift closure by referencing just the stdlib.
-    SWIFT_LIB_DYNAMIC = "${lib.getLib swiftPackages.stdlib}/lib";
-  };
 
   mesonFlags = [
     (lib.mesonOption "default_library" "shared")

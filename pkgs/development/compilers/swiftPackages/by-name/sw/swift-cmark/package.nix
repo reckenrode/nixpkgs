@@ -8,13 +8,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-cmark";
-  version = "0.7.1";
+  version = "0.8.0";
 
   src = fetchFromGitHub {
     owner = "swiftlang";
     repo = "swift-cmark";
     tag = finalAttrs.version;
-    hash = "sha256-8Q65DBWL5QfBmqBIEFWBBNCGXe91Yt++uv7BsMgBW9U=";
+    hash = "sha256-0pyZ5yQRsbiKwz2XT8N6dMwCLcmM28qQOrxHcV6uH7g=";
   };
 
   strictDeps = true;

@@ -2,12 +2,13 @@
   lib,
   cctools,
   jq,
+  llvmPackages_current,
   llvm_libtool,
   makeSetupHook,
   stdenv,
   stdenvNoCC,
   swiftpm,
-  swiftpmUnpackHook
+  swiftpmUnpackHook,
 }:
 
 let
@@ -24,7 +25,6 @@ in
 makeSetupHook {
   name = "${lib.getName swiftpm}-hook-${lib.getVersion swiftpm}";
   propagatedBuildInputs = [
-#    swiftpm.out
     swiftpmUnpackHook
   ]
   ++ lib.optionals stdenvNoCC.hostPlatform.isDarwin [
@@ -36,6 +36,7 @@ makeSetupHook {
   substitutions = {
     inherit (stdenvNoCC.hostPlatform.extensions) sharedLibrary;
     swiftPlatform = stdenv.hostPlatform.swift.platform;
+    install_name_tool = lib.getExe' llvmPackages_current.llvm "llvm-install-name-tool";
     jq = lib.getExe jq;
   };
 } ./setup-hook.sh
