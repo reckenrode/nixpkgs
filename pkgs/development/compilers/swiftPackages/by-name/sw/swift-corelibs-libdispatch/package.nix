@@ -6,10 +6,11 @@
   lld,
   ninja,
   stdenv,
-  swift-minimal,
   swift-corelibs-libdispatch,
+  swift-minimal,
   swift_release,
-  useSwift ? true,
+
+  useSwift ? true, # Where to build the Swift overlay and swiftDispatch shared library.
 }:
 
 let

@@ -59,23 +59,22 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs = [ swift-syntax ];
 
-  postInstall =
-    (
-      if stdenv.hostPlatform.isDarwin then
-        ''
-          install -D -t "''${!outputDev}/lib/swift/host/plugins/testing" \
-            lib/swift/host/plugins/testing/libTestingMacros${sharedLibrary}
-          install_name_tool "''${!outputLib}/lib/libTesting${sharedLibrary}" \
-            -id "''${!outputLib}/lib/libTesting${sharedLibrary}"
-          install_name_tool "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}" \
-            -id "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}"
-        ''
-      else
-        ''
-          install -D -t "''${!outputDev}/lib/swift/host/plugins/testing" \
-              lib/swift/host/plugins/libTestingMacros${sharedLibrary}
-        ''
-    );
+  postInstall = (
+    if stdenv.hostPlatform.isDarwin then
+      ''
+        install -D -t "''${!outputDev}/lib/swift/host/plugins/testing" \
+          lib/swift/host/plugins/testing/libTestingMacros${sharedLibrary}
+        install_name_tool "''${!outputLib}/lib/libTesting${sharedLibrary}" \
+          -id "''${!outputLib}/lib/libTesting${sharedLibrary}"
+        install_name_tool "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}" \
+          -id "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}"
+      ''
+    else
+      ''
+        install -D -t "''${!outputDev}/lib/swift/host/plugins/testing" \
+          lib/swift/host/plugins/libTestingMacros${sharedLibrary}
+      ''
+  );
 
   __structuredAttrs = true;
 

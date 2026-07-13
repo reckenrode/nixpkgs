@@ -1,33 +1,37 @@
 {
   lib,
+  llvmPackages,
+  llvmPackages_current,
+  patchelf,
   stdenv,
   stdenvNoCC,
   stdlib,
-  symlinkJoin,
-  swift-corelibs-xctest,
-  swift-driver,
-  swift-testing,
   swift-collections,
   swift-corelibs-foundation,
   swift-corelibs-libdispatch,
-  swift-foundation-icu,
+  swift-corelibs-xctest,
+  swift-driver,
   swift-foundation,
-  swift_release,
+  swift-foundation-icu,
+  swift-testing,
   swiftc,
+  symlinkJoin,
+  swift_release,
 
   # Tests
   test-cxx-interop,
   test-foundation-macros,
   test-swift-differentiation,
   test-swift-testing,
+  test-swift-scripting,
+  test-swift-repl,
 
-  # Required by the setup-hook
-  llvmPackages_current,
-  patchelf,
+  enableRepl ? true, # Whether to build and include LLDB for the Swift REPL.
 }@args:
 
 let
   getBuildHost = lib.mapAttrs (_: pkg: pkg.__spliced.buildHost or pkg);
+  getBuildTarget = lib.mapAttrs (_: pkg: pkg.__spliced.buildTarget or pkg);
   getHostTarget = lib.mapAttrs (_: pkg: pkg.__spliced.hostTarget or pkg);
 
   buildHostPackages = getBuildHost args;
@@ -35,15 +39,15 @@ let
 
   includeTesting = swiftc.supportsMacros && swift-testing != null;
 
-  swift-foundation-macros = stdenvNoCC.mkDerivation {
-    pname = "swift-foundation-macros";
-    version = lib.getVersion swift-foundation;
-
-    buildCommand = ''
-      mkdir -p "$out/lib/swift/host/plugins"
-      ln -s ${lib.escapeShellArg hostTargetPackages.swift-foundation.dev}/lib/swift/host/plugins/libFoundationMacros${stdenv.hostPlatform.extensions.sharedLibrary} "$out/lib/swift/host/plugins"
-    '';
-  };
+  #  swift-foundation-macros = stdenvNoCC.mkDerivation {
+  #    pname = "swift-foundation-macros";
+  #    version = lib.getVersion swift-foundation;
+  #
+  #    buildCommand = ''
+  #      mkdir -p "$out/lib/swift/host/plugins"
+  #      ln -s ${lib.escapeShellArg hostTargetPackages.swift-foundation.dev}/lib/swift/host/plugins/libFoundationMacros${stdenv.hostPlatform.extensions.sharedLibrary} "$out/lib/swift/host/plugins"
+  #    '';
+  #  };
 
   # This makes sure that linking to `libdispatch.so` and `libBlocksRuntime.so` does not pull in previous stages
   # of the bootstrap toolchain.
@@ -58,6 +62,10 @@ let
     paths = [
       buildHostPackages.swiftc.out
       hostTargetPackages.swiftc.dev
+    ]
+    ++ lib.optionals enableRepl [
+      # LLDB is used by `swift repl` to provide the REPL.
+      buildHostPackages.llvmPackages.lldb.out
     ]
     ++ lib.optionals includeTesting [
       hostTargetPackages.swift-corelibs-xctest.dev
@@ -183,6 +191,9 @@ stdenv.mkDerivation (finalAttrs: {
     # Make writable temporarily to allow for the fixups below to be made to the outputs.
     chmod -R u+w "$out/bin" "$out/lib" "$out/nix-support"
 
+    # Swift expects to find Clang next to it.
+    ln -s ${lib.escapeShellArg (lib.getExe' (getBuildTarget args).llvmPackages_current.clang "clang")} "$out/bin/clang"
+
     # `swift-frontend` expects to find everything relative to its location after resolving symlinks.
     # Also copy `swift-driver` assuming it does similar.
     for exe in swift-driver swift-frontend; do
@@ -224,7 +235,17 @@ stdenv.mkDerivation (finalAttrs: {
         --replace-fail @swiftPath@ "$out" \
         --replace-fail @swiftPlatform@ ${stdenv.hostPlatform.swift.platform}
     ''}
-
+    ${lib.optionalString enableRepl ''
+      # LLDB expects to find Swift relative to its location. Both the wrapper and its binary need copied,
+      # and the wrapper needs updated to find the binary in the new location.
+      lldbBinPath=$(dirname $(readlink "$out/bin/lldb"))
+      for lldbExe in lldb .lldb-wrapped; do
+        rm "$out/bin/$lldbExe"
+        cp "$lldbBinPath/$lldbExe" "$out/bin/$lldbExe"
+      done
+      substituteInPlace "$out/bin/lldb" \
+        --replace-fail "$lldbBinPath" "$out/bin"
+    ''}
     chmod -R u-w "$out/bin" "$out/lib" "$out/nix-support"
   '';
 
@@ -235,10 +256,18 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   passthru.tests = {
-    inherit test-cxx-interop test-foundation-macros test-swift-differentiation;
+    inherit
+      test-cxx-interop
+      test-foundation-macros
+      test-swift-differentiation
+      test-swift-scripting
+      ;
   }
   // lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) {
-    inherit test-swift-testing;
+    inherit
+      test-swift-repl # Requires `debugserver` and debugging permission, which non-interactive sessions can’t get.
+      test-swift-testing # XCTest and Swift Testing does not run on Darwin.
+      ;
   };
 
   # passthru.tests = callPackage ./tests { };

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Fri, 13 Feb 2026 20:51:47 -0500
-Subject: [PATCH 6/9] use-nixpkgs-libdispatch
+Subject: [PATCH 06/10] use-nixpkgs-libdispatch
 
 ---
  CMakeLists.txt                           | 10 ++--------

@@ -40,7 +40,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   swiftpmFlags = [
     # Otherwise fails to build with `error: module 'SwiftDocC' was not compiled for testing`.
-    "-Xswiftc" "-enable-testing"
+    "-Xswiftc"
+    "-enable-testing"
   ];
 
   nativeBuildInputs = [

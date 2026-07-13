@@ -1,6 +1,6 @@
 {
   lib,
-  makeSetupHook,
+  llvmPackages,
   stdenv,
   swiftc,
 }:
@@ -8,6 +8,8 @@
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
   libraryExtension = stdenv.hostPlatform.extensions.library;
+
+  toolLTO = lib.cmakeFeature "SWIFT_TOOLS_ENABLE_LTO" "thin";
 in
 (swiftc.override {
   stdlib = null;
@@ -28,6 +30,14 @@ in
       "dev"
     ];
 
+    cmakeFlags =
+      # Only enable LTO for the stdlib. Remove it if it’s enabled for the tools.
+      (lib.filter (flag: flag != toolLTO) (old.cmakeFlags or [ ]))
+      # LTO is slow (and pointless due to using system libraries) on Darwin, so only enable it for other platforms.
+      ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
+        (lib.cmakeFeature "SWIFT_STDLIB_ENABLE_LTO" "thin")
+      ];
+
     postInstall = ''
       moveToOutput "lib/swift/${swiftPlatform}" "''${!outputLib}"
 
@@ -43,7 +53,7 @@ in
       mv -v "''${!outputLib}/lib/swift/${swiftPlatform}"/*${libraryExtension} "''${!outputLib}/lib"
 
       # Install C++ interop libraries and headers
-      cp -v lib/swift/${swiftPlatform}/libswiftCxx*.a "''${!outputDev}/lib"
+      cp -v lib/swift/${swiftPlatform}/libswiftCxx*${stdenv.hostPlatform.extensions.staticLibrary} "''${!outputDev}/lib"
       cp -rv lib/swift/${swiftPlatform}/Cxx*.swiftmodule "''${!outputDev}/lib/swift/${swiftPlatform}"
 
       mkdir -p "''${!outputDev}/include/swiftToCxx"
@@ -58,6 +68,13 @@ in
     + lib.optionalString stdenv.hostPlatform.isLinux ''
       # Linux has some extra development files that need moved to $dev
       moveToOutput lib/swift/${swiftPlatform}/${stdenv.hostPlatform.swift.arch} "''${!outputDev}"
+    ''
+    + lib.optionalString stdenv.hostPlatform.isElf ''
+      # Convert LLVM bitcode files into native code to avoid requiring LTO for C++ interop.
+      ${lib.escapeShellArg (lib.getExe' llvmPackages.llvm "llc")} stdlib/public/Cxx/${lib.toUpper stdenv.hostPlatform.swift.platform}/${stdenv.hostPlatform.swift.arch}/Cxx.o -o Cxx.o -filetype=obj
+      "$AR" Drs "''${!outputDev}/lib/libswiftCxx.a" Cxx.o
+      ${lib.escapeShellArg (lib.getExe' llvmPackages.llvm "llc")} stdlib/public/Cxx/std/${lib.toUpper stdenv.hostPlatform.swift.platform}/${stdenv.hostPlatform.swift.arch}/CxxStdlib.o -o CxxStdlib.o -filetype=obj
+      "$AR" Drs "''${!outputDev}/lib/libswiftCxxStdlib.a" CxxStdlib.o
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       # Back-deployment libraries are installed as part of the compiler component, so install them manually.

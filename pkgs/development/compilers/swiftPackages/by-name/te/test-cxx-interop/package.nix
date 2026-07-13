@@ -34,14 +34,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   doInstallCheck = true;
 
-#  env = {
-#    # Gross hack copied from `protoc-gen-swift` :(
-#    LD_LIBRARY_PATH = lib.optionalString stdenv.hostPlatform.isLinux (
-#      lib.makeLibraryPath [
-#        swiftPackages.Dispatch
-#      ]
-#    );
-#  };
+  #  env = {
+  #    # Gross hack copied from `protoc-gen-swift` :(
+  #    LD_LIBRARY_PATH = lib.optionalString stdenv.hostPlatform.isLinux (
+  #      lib.makeLibraryPath [
+  #        swiftPackages.Dispatch
+  #      ]
+  #    );
+  #  };
 
   meta = {
     inherit (swift.meta)

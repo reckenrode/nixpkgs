@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:38:01 -0500
-Subject: [PATCH 3/9] cmark-build-revamp
+Subject: [PATCH 03/10] cmark-build-revamp
 
 ---
  cmake/modules/SwiftSharedCMakeConfig.cmake | 28 ----------------------

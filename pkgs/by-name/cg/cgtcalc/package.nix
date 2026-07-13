@@ -1,5 +1,4 @@
 {
-  clang,
   fetchFromGitHub,
   lib,
   nix-update-script,
@@ -25,7 +24,6 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-+qgvl5y9ipVQIZlLZbkzkqb9bO7X9VGDvVsloOLZU/k=";
   };
   nativeBuildInputs = [
-    clang
     swift
     swiftpm
   ];
@@ -43,8 +41,6 @@ stdenv.mkDerivation (finalAttrs: {
     swiftPackages.XCTest
   ];
 
-  # libIndexStore.so: cannot open shared object file: No such file or directory
-  # https://github.com/NixOS/nixpkgs/issues/379859
   doCheck = !stdenv.hostPlatform.isDarwin;
 
   passthru.updateScript = nix-update-script {

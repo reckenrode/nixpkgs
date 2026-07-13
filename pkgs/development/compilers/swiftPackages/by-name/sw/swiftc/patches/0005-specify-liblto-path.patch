@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:47:06 -0500
-Subject: [PATCH 5/9] specify-liblto-path
+Subject: [PATCH 05/10] specify-liblto-path
 
 ---
  cmake/modules/UnixCompileRules.cmake | 2 +-

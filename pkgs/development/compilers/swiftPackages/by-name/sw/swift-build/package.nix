@@ -32,7 +32,9 @@ let
     version = "1";
 
     buildCommand = ''
-      install -m755 -D ${replaceVars ./extra-bins/copypng { inherit coreutils oxipng; }} "$out/bin/copypng"
+      install -m755 -D ${
+        replaceVars ./extra-bins/copypng { inherit coreutils oxipng; }
+      } "$out/bin/copypng"
       install -m755 -D ${replaceVars ./extra-bins/tiffutil { inherit libtiff; }} "$out/bin/tiffutil"
     '';
   };
@@ -69,7 +71,8 @@ stdenv.mkDerivation (finalAttrs: {
       libiconv = lib.getBin libiconv;
       libtool = lib.getBin llvm_libtool;
       llvm = lib.getBin llvmPackages_current.llvm;
-      shell_cmds = if stdenv.hostPlatform.isDarwin then lib.getBin darwin.shell_cmds else "/not-supported";
+      shell_cmds =
+        if stdenv.hostPlatform.isDarwin then lib.getBin darwin.shell_cmds else "/not-supported";
       sigtool = lib.getBin darwin.sigtool;
     })
     # Swift Build checks whether the SDK is Xcode by looking at the `DEVELOPER_DIR` path for Xcode.

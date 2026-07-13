@@ -19,12 +19,12 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-01lnZFaFAcjWN9Hn0y60gEANz7RbYRvjESysYqB9iSo=";
   };
 
-#  postPatch =
-#    # Fix the deployment target or compiling code using XCTest fails.
-#    lib.optionalString stdenv.hostPlatform.isDarwin ''
-#      substituteInPlace Package.swift \
-#        --replace-fail '.macOS("13.0")' ".macOS(\"$MACOSX_DEPLOYMENT_TARGET\")"
-#    '';
+  #  postPatch =
+  #    # Fix the deployment target or compiling code using XCTest fails.
+  #    lib.optionalString stdenv.hostPlatform.isDarwin ''
+  #      substituteInPlace Package.swift \
+  #        --replace-fail '.macOS("13.0")' ".macOS(\"$MACOSX_DEPLOYMENT_TARGET\")"
+  #    '';
 
   strictDeps = true;
 

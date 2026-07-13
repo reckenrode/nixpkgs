@@ -28,18 +28,18 @@ let
   swift-syntax-no-toolchain = swift-syntax.override { useToolchainLibraries = false; };
 
   rpaths = lib.makeLibraryPath [
-      sqlite
-      swift-argument-parser
-      swift-asn1
-      swift-build
-      swift-certificates
-      swift-collections
-      swift-crypto
-      swift-driver
-      swift-llbuild
-      swift-syntax-no-toolchain
-      swift-system
-      swift-tools-support-core
+    sqlite
+    swift-argument-parser
+    swift-asn1
+    swift-build
+    swift-certificates
+    swift-collections
+    swift-crypto
+    swift-driver
+    swift-llbuild
+    swift-syntax-no-toolchain
+    swift-system
+    swift-tools-support-core
   ];
 in
 
@@ -130,28 +130,30 @@ stdenv.mkDerivation (finalAttrs: {
     swift-tools-support-core
   ];
 
-  postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    # Replace `@rpath` with absolute paths on Darwin. For some reason, this isn’t always done during installation.
-    # `fixDarwinDylibNames` doesn’t work either.
-    IFS= readarray -d "" dylibs < <(find "$out" -type f -and -name '*.dylib' -print0)
-    declare -a mappings
+  postInstall =
+    lib.optionalString stdenv.hostPlatform.isDarwin ''
+      # Replace `@rpath` with absolute paths on Darwin. For some reason, this isn’t always done during installation.
+      # `fixDarwinDylibNames` doesn’t work either.
+      IFS= readarray -d "" dylibs < <(find "$out" -type f -and -name '*.dylib' -print0)
+      declare -a mappings
 
-    for dylib in "''${dylibs[@]}"; do
-      mappings+=(-change "@rpath/$(basename "$dylib")" "$dylib")
-    done
+      for dylib in "''${dylibs[@]}"; do
+        mappings+=(-change "@rpath/$(basename "$dylib")" "$dylib")
+      done
 
-    for dylib in "''${dylibs[@]}"; do
-      install_name_tool "$dylib" ''${mappings[@]}
-    done
-  '' + lib.optionalString stdenv.hostPlatform.isElf ''
-    for output in "''${outputs[@]}"; do
-      while IFS= read -d "" f; do
-        if isELF "$f"; then
-          patchelf --add-rpath ${lib.escapeShellArg rpaths} "$f"
-        fi
-      done < <(find "$output" -type f -print0)
-    done
-  '';
+      for dylib in "''${dylibs[@]}"; do
+        install_name_tool "$dylib" ''${mappings[@]}
+      done
+    ''
+    + lib.optionalString stdenv.hostPlatform.isElf ''
+      for output in "''${outputs[@]}"; do
+        while IFS= read -d "" f; do
+          if isELF "$f"; then
+            patchelf --add-rpath ${lib.escapeShellArg rpaths} "$f"
+          fi
+        done < <(find "$output" -type f -print0)
+      done
+    '';
 
   __structuredAttrs = true;
 

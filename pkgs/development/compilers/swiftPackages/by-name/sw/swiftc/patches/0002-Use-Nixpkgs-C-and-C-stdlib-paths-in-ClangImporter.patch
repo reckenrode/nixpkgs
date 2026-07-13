@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:37:05 -0500
-Subject: [PATCH 2/9] Use Nixpkgs C and C++ stdlib paths in ClangImporter
+Subject: [PATCH 02/10] Use Nixpkgs C and C++ stdlib paths in ClangImporter
 
 This code injects an LLVM modulemap for glibc and libstdc++ by
 overriding specific VFS paths. In order to do that, it needs to know the

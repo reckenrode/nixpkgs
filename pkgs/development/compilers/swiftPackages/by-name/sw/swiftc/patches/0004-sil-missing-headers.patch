@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sun, 4 Jan 2026 14:46:08 -0500
-Subject: [PATCH 4/9] sil-missing-headers
+Subject: [PATCH 04/10] sil-missing-headers
 
 Fix compilation errors when building the SIL module during bootstrap.
 
