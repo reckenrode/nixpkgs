@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Fri, 26 Jun 2026 20:57:27 -0400
-Subject: [PATCH 3/3] Search PATH for subcommands
+Subject: [PATCH 3/4] Search PATH for subcommands
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

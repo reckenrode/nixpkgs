@@ -245,6 +245,14 @@ stdenv.mkDerivation (finalAttrs: {
       done
       substituteInPlace "$out/bin/lldb" \
         --replace-fail "$lldbBinPath" "$out/bin"
+      ${lib.optionalString stdenv.hostPlatform.isElf ''
+        # LLDB tries to find the Swift resource folder relative to where it finds `liblldb.so` via RPATH.
+        oldRpaths=$(patchelf --print-rpath "$out/bin/.lldb-wrapped")
+        lldbRpath=${lib.escapeShellArg buildHostPackages.llvmPackages.lldb.out}
+
+        chmod u+w "$out/bin/.lldb-wrapped"
+        patchelf --set-rpath "''${oldRpaths/$lldbRpath/$out}" "$out/bin/.lldb-wrapped"
+      ''}
     ''}
     chmod -R u-w "$out/bin" "$out/lib" "$out/nix-support"
   '';

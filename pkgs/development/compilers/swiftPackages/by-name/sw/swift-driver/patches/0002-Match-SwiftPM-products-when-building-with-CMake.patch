@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Fri, 26 Jun 2026 21:01:31 -0400
-Subject: [PATCH 2/3] Match SwiftPM products when building with CMake
+Subject: [PATCH 2/4] Match SwiftPM products when building with CMake
 
 Adjust the built libraries to match the way SwiftPM would build the
 Swift Compiler Driver.

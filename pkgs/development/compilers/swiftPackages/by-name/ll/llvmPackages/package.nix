@@ -67,6 +67,7 @@ in
             pname = "swiftc-headers";
             outputs = [ "out" ];
             dontBuild = true;
+
             installPhase = ''
               runHook preInstall
 
@@ -89,6 +90,7 @@ in
               swiftPlatform=${stdenv.hostPlatform.swift.platform}
 
               buildDir=$NIX_BUILD_TOP/$sourceRoot/build
+              buildType=''${cmakeBuildType:-Release}
 
               # Some headers reference headers from the source tree, so copy all of them.
               mkdir -p "$out"
@@ -121,17 +123,17 @@ in
               # Change exports to point to the locations in the store. This is a ugly because the exports could be in
               # one of several outputs belong to different derivations.
               sed -i "$out/lib/cmake/swift/SwiftExports.cmake" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$stdlibLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$stdlibDevPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/\(swift-[^/]*\)/$swiftPlatform/$swiftArch/\([^/\"]*\)\"|IMPORTED_LOCATION_RELEASE \"$stdlibLibPath/lib/\1/\2\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/swift/host/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcLibPath/lib/swift/host/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/swift/host/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcDevPath/lib/swift/host/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/\(lib_Internal[^/\"]*\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcLibPath/lib/swift/host/compiler/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/\(.*.framework/[^\"]*\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/lib/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_RELEASE \"$swiftcDevPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_RELEASE \"$buildDir/bin/\([^/\"]*\)\"|IMPORTED_LOCATION_RELEASE \"swiftBinaryDir/bin/\1\"|g" \
-                -e "s|IMPORTED_OBJECTS_RELEASE \"$buildDir/.*/\([^/\"]*.o\)\"|IMPORTED_OBJECTS_RELEASE \"$swiftcDevPath/lib\/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibLibPath/lib/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibDevPath/lib/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(swift-[^/]*\)/$swiftPlatform/$swiftArch/\([^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibLibPath/lib/\1/\2\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/host/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/swift/host/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/host/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcDevPath/lib/swift/host/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(lib_Internal[^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/swift/host/compiler/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*.framework/[^\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcDevPath/lib/\1\"|g" \
+                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/bin/\([^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"swiftBinaryDir/bin/\1\"|g" \
+                -e "s|IMPORTED_OBJECTS_''${buildType^^} \"$buildDir/.*/\([^/\"]*.o\)\"|IMPORTED_OBJECTS_''${buildType^^} \"$swiftcDevPath/lib\/\1\"|g" \
                 -e "/INTERFACE_INCLUDE_DIRECTORIES/c INTERFACE_INCLUDE_DIRECTORIES \"$swiftIncludeDirs\"" \
                 -e "/INTERFACE_LINK_DIRECTORIES/c INTERFACE_LINK_DIRECTORIES \"$swiftLibraryDirs\""
 
@@ -151,6 +153,8 @@ in
               ./patches/lldb/0001-Set-stdlib-path-on-Linux.patch
               # Otherwise, linking `lldb-server` fails with a missing symbol error on Linux.
               ./patches/lldb/0002-Link-lldb-server-to-swiftCore.patch
+              # Don’t resolve the liblldb symlink to help it find the Swift toolchain that it’s linked into.
+              ./patches/lldb/0003-Don-t-follow-symlinks-when-finding-liblldb.patch
             ];
             buildInputs =
               (old.buildInputs or [ ])
