@@ -5,14 +5,14 @@ import PackageDescription
 let package = Package(
     name: "CxxInteropTest",
     products: [
-        .executable(name: "CxxInteropTest", targets: ["CxxInteropTest"]),
+        .executable(name: "CxxInteropTest", targets: ["CxxInteropTest"])
     ],
     targets: [
         .executableTarget(
             name: "CxxInteropTest",
             path: "Sources",
             swiftSettings: [
-                .interoperabilityMode(.Cxx),
+                .interoperabilityMode(.Cxx)
             ]
         )
     ]

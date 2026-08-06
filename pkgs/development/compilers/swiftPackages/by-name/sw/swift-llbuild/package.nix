@@ -105,8 +105,9 @@ stdenv.mkDerivation (finalAttrs: {
   __structuredAttrs = true;
 
   meta = {
-    homepage = "https://github.com/swift/swift-llbuild";
+    homepage = "https://github.com/swiftlang/swift-llbuild";
     description = "Low-level build system used by SwiftPM and Xcode";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

@@ -6,14 +6,12 @@
   lib,
   apple-sdk_26,
   darwin,
-  fetchpatch2,
   fetchFromGitHub,
   generateSplicesForMkScope,
   libuuid,
   lld,
   llvmPackages_19, # Needs to match the `llvmVersion` of the fork.
   python3,
-  runCommand,
   stdenv,
   stdlib,
   swift-cmark,
@@ -46,6 +44,8 @@ in
     // {
       # Updated patch that also prevents Clang from trying to copy `clang-deps-launcher.py` to `${llvm}/bin`.
       "clang/gnu-install-dirs.patch" = [ { path = ./patches; } ];
+      # Update backport of the Darwin triple changes for macOS 27.
+      "llvm/backport-darwin-triple-parsing.patch" = [ { path = ./patches; } ];
     };
 }).overrideScope
   (
@@ -62,89 +62,6 @@ in
       lldb =
         let
           python3-with-distutils = python3.withPackages (pkgs: [ pkgs.distutils ]);
-          # LLDB needs internal headers to build. Run configure phase to generate `Config.h` then copy the rest.
-          swiftHeaders = swiftc.overrideAttrs (old: {
-            pname = "swiftc-headers";
-            outputs = [ "out" ];
-            dontBuild = true;
-
-            installPhase = ''
-              runHook preInstall
-
-              staticLibExt=${stdenv.hostPlatform.extensions.staticLibrary}
-              sharedLibExt=${stdenv.hostPlatform.extensions.sharedLibrary}
-
-              stdlibLibPath=${lib.getLib stdlib}
-              stdlibDevPath=${lib.getDev stdlib}
-              stdlibIncPath=${lib.getInclude stdlib}
-
-              swiftcLibPath=${lib.getLib swiftc}
-              swiftcDevPath=${lib.getOutput "static" swiftc}
-              swiftcIncPath=${lib.getInclude swiftc}
-
-              swiftBinaryDir=${lib.getBin swiftc}
-              swiftIncludeDirs=$swiftcIncPath/include\;$stdlibIncPath/lib\;$stdlibIncPath/include\;$out/include
-              swiftLibraryDirs=$swiftcDevPath/lib\;$swiftcLibPath/lib\;$stdlibLibPath/lib\;$stdlibDevPath/lib
-
-              swiftArch=${stdenv.hostPlatform.swift.arch}
-              swiftPlatform=${stdenv.hostPlatform.swift.platform}
-
-              buildDir=$NIX_BUILD_TOP/$sourceRoot/build
-              buildType=''${cmakeBuildType:-Release}
-
-              # Some headers reference headers from the source tree, so copy all of them.
-              mkdir -p "$out"
-              cp -rv include "$out" # For generated config headers.
-              while IFS= read -d "" f; do
-                dest=$out/''${f#../}
-                mkdir -p "$(dirname "$dest")"
-                cp -v "$f" "$dest"
-              done < <(find .. \( -name '*.def' -o -name '*.h' \) -print0)
-
-              # Copy the Swift CMake config but fix it up to point to the store instead of to the source folder.
-              mkdir -p "$out/lib/cmake/modules"
-              cp -rv lib/cmake/swift "$out/lib/cmake"
-
-              # Clean up the config paths and drop the main source location (because it references the build folder).
-              # The `find_package` is because our Swift builds against an external swift-cmark, which dependents
-              # need to be able to find and use as well. Otherwise, they try to link liblibcmark-gfm, which is wrong.
-              sed -i "$out/lib/cmake/swift/SwiftConfig.cmake" \
-                -e '1i find_package(cmark-gfm)' \
-                -e "2i set(SWIFT_STDLIB_DIR \"$stdlibLibPath/lib\")" \
-                -e '/SWIFT_MAIN_SRC_DIR/d' \
-                -e "/SWIFT_BINARY_DIR /c set(SWIFT_BINARY_DIR \"$swiftBinaryDir\")" \
-                -e "/SWIFT_INCLUDE_DIR /c set(SWIFT_INCLUDE_DIR \"$swiftIncludeDirs\")" \
-                -e "/SWIFT_INCLUDE_DIRS /c set(SWIFT_INCLUDE_DIRS \"$swiftIncludeDirs\")" \
-                -e "/SWIFT_LIBRARY_DIR /c set(SWIFT_LIBRARY_DIR \"$swiftLibraryDirs\")" \
-                -e "/SWIFT_LIBRARY_DIRS /c set(SWIFT_LIBRARY_DIRS \"$swiftLibraryDirs\")" \
-                -e "/SWIFT_CMAKE_DIR /c set(SWIFT_CMAKE_DIR \"$out/lib/cmake/modules\")" \
-                -e "/include(\"''${NIX_BUILD_TOP//\//\\\/}/c include(\"$out/lib/cmake/swift/SwiftExports.cmake\")"
-
-              # Change exports to point to the locations in the store. This is a ugly because the exports could be in
-              # one of several outputs belong to different derivations.
-              sed -i "$out/lib/cmake/swift/SwiftExports.cmake" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/$swiftPlatform/$swiftArch/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibDevPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(swift-[^/]*\)/$swiftPlatform/$swiftArch/\([^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$stdlibLibPath/lib/\1/\2\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/host/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/swift/host/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/swift/host/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcDevPath/lib/swift/host/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(lib_Internal[^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/swift/host/compiler/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*$sharedLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*.framework/[^\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcLibPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/lib/\(.*$staticLibExt\)\"|IMPORTED_LOCATION_''${buildType^^} \"$swiftcDevPath/lib/\1\"|g" \
-                -e "s|IMPORTED_LOCATION_''${buildType^^} \"$buildDir/bin/\([^/\"]*\)\"|IMPORTED_LOCATION_''${buildType^^} \"swiftBinaryDir/bin/\1\"|g" \
-                -e "s|IMPORTED_OBJECTS_''${buildType^^} \"$buildDir/.*/\([^/\"]*.o\)\"|IMPORTED_OBJECTS_''${buildType^^} \"$swiftcDevPath/lib\/\1\"|g" \
-                -e "/INTERFACE_INCLUDE_DIRECTORIES/c INTERFACE_INCLUDE_DIRECTORIES \"$swiftIncludeDirs\"" \
-                -e "/INTERFACE_LINK_DIRECTORIES/c INTERFACE_LINK_DIRECTORIES \"$swiftLibraryDirs\""
-
-              # Copy SwiftAddCustomCommandTarget and its required support module (SwiftUtils), which is needed by LLDB.
-              cp -v ../cmake/modules/SwiftUtils.cmake "$out/lib/cmake/modules/SwiftUtils.cmake"
-              cp -v ../cmake/modules/SwiftAddCustomCommandTarget.cmake "$out/lib/cmake/modules/SwiftAddCustomCommandTarget.cmake"
-
-              runHook postInstall
-            '';
-            postInstall = "";
-          });
 
           swiftLLDB = prev.lldb.overrideAttrs (old: {
             patches = (old.patches or [ ]) ++ [
@@ -179,12 +96,12 @@ in
               ++ [
                 (lib.cmakeFeature "Clang_DIR" "${lib.getDev final.libclang}/lib/cmake/clang")
                 (lib.cmakeFeature "LLVM_DIR" "${lib.getDev final.libllvm}/lib/cmake/llvm")
-                (lib.cmakeFeature "Swift_DIR" "${swiftHeaders}")
+                (lib.cmakeFeature "Swift_DIR" "${lib.getOutput "static" swiftc}")
                 (lib.cmakeFeature "cmark-gfm_DIR" "${swift-cmark.out}/lib/cmake")
                 (lib.cmakeFeature "LLDB_SWIFT_LIBS" "${lib.getDev stdlib}/lib/swift")
               ]
               ++ lib.optionals stdenv.hostPlatform.isDarwin [
-                (lib.cmakeFeature "CMAKE_LINKER_TYPE" "LLD")
+                (lib.cmakeFeature "CMAKE_LINKER_TYPE" "LLD") # Darwin fails to link correctly using ld64 (see above).
               ];
 
             # Make sure LLDB can find the Swift compiler shared libraries.

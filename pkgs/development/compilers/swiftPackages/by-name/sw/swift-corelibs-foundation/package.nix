@@ -81,9 +81,8 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Core utilities, internationalization, and OS independence for Swift";
     mainProgram = "plutil";
-    homepage = "https://github.com/apple/swift-corelibs-foundation";
-    inherit (swift-minimal.meta) badPlatforms platforms;
-    broken = stdenv.hostPlatform.isDarwin; # Work needs to be done to build this on Darwin, but it’s not used, so why bother?
+    homepage = "https://github.com/swiftlang/swift-corelibs-foundation";
+    platforms = lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

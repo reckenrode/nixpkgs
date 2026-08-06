@@ -11,7 +11,6 @@
   sqlite,
   stdenv,
   swift,
-  swift-lmdb,
   swift_release,
   swiftpm,
 }:
@@ -41,7 +40,7 @@ stdenv.mkDerivation (finalAttrs: {
   swiftpmPatches = swiftpm.patches;
 
   postPatch = ''
-    packagesPath=$(readlink Packages)
+    packagesPath=$(readlink -f Packages)
 
     rm Packages
     cp -r "$packagesPath" Packages
@@ -59,8 +58,9 @@ stdenv.mkDerivation (finalAttrs: {
 
   swiftpmDeps = fetchSwiftPMDeps {
     inherit (finalAttrs) pname version src;
-    hash = "sha256-h9+4nj6QfNOXhKsJaQYtrcbO3v3pRd4sAE3tsfDtZrs=";
+    hash = "sha256-xpvXcm2qtCd2xhClbR6BLwmaupSHg1H25uJd7Thgd/4=";
 
+    # Upstream doesn’t provide `Package.resolved`.
     postPatch = ''
       # Upstream doesn’t provide `Package.resolved`.
       ln -s ${./Package.resolved} Package.resolved
@@ -72,7 +72,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     pkg-config
     swift
-    swift-lmdb.devendorHook
     swiftpm
   ];
 
@@ -91,7 +90,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Language Server Protocol implementation for Swift and C-based languages";
     mainProgram = "sourcekit-lsp";
     homepage = "https://github.com/apple/sourcekit-lsp";
-    platforms = with lib.platforms; linux ++ darwin;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

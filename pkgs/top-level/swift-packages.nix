@@ -4,6 +4,7 @@ in
 
 {
   lib,
+  buildPackages,
   clangStdenv,
   darwin,
   generateSplicesForMkScope,
@@ -44,16 +45,6 @@ makeScopeWithSplicing' {
           ln -s ${lib.getExe' llvmPackages.llvm "llvm-libtool-darwin"} "$out/bin/libtool"
         '';
       };
-
-      #      vtool = stdenvNoCC.mkDerivation {
-      #        pname = "cctools-vtool";
-      #        version = lib.getVersion cctools;
-      #
-      #        buildCommand = ''
-      #          mkdir -p "$out/bin"
-      #          ln -s ${lib.getExe' cctools "vtool"} "$out/bin/vtool"
-      #        '';
-      #      };
     in
     {
       inherit (self.swift) mkSwiftPackage;
@@ -74,6 +65,10 @@ makeScopeWithSplicing' {
     stdenv = clangStdenv;
 
     swift-corelibs-icu = darwin.ICU; # Reuse the packaging done for the ICU source release.
+
+    # Compatibility aliases for the old Swift packaging.
+    swift-unwrapped = lib.warn "Swift is no longer wrapped. Use `swift` directly." self.swift;
+    swiftNoSwiftDriver = lib.warn "swiftNoSwiftDriver is an alias. Override `swift` and set `swift-driver` to `null` instead." self.swift.override { swift-driver = null; };
 
     Dispatch = lib.warn "Dispatch has been renamed to swift-corelibs-libdispatch. It is also now included in the default Swift SDK and no longer needs referenced as a separate package." self.swift-corelibs-libdispatch;
     Foundation = lib.warn "Foundation has been renamed to swift-corelibs-foundation. It is also now included in the default Swift SDK and no longer needs referenced as a separate package." self.swift-corelibs-foundation;

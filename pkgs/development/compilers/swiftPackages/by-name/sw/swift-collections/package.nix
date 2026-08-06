@@ -65,6 +65,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     homepage = "https://github.com/apple/swift-collections";
     description = "Commonly used data structures for Swift";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

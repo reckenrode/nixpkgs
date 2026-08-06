@@ -1,4 +1,4 @@
-{
+{ lib,
   bzip2,
   darwin,
   fetchFromGitHub,
@@ -23,8 +23,8 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   swiftpmDeps = fetchSwiftPMDeps {
-    inherit (finalAttrs) src pname version;
-    hash = "sha256-AUJ2NGiCYS/cPZP4tH9T318wVny5oWBvdhP1HeVJPuE=";
+    inherit (finalAttrs) pname version src;
+    hash = "sha256-qDwWROCPRrdeAifFarf34MUnzK3ahztJuzKuob64zAc=";
   };
 
   nativeBuildInputs = [

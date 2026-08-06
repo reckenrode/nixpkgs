@@ -1,6 +1,7 @@
 {
   lib,
   llvmPackages,
+  llvmPackages_current,
   stdenv,
   swiftc,
 }:
@@ -79,13 +80,36 @@ in
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       # Back-deployment libraries are installed as part of the compiler component, so install them manually.
       cp -rv lib/swift/macosx/libswiftCompatibility*.a "''${!outputDev}/lib"
+
       # Install `Span`-compatibility back-deployment library.
       mkdir -p "''${!outputLib}/lib/swift-6.2/macosx"
       cp -v lib/swift-6.2/macosx/libswiftCompatibilitySpan.dylib "''${!outputLib}/lib/swift-6.2/macosx/libswiftCompatibilitySpan.dylib"
+
       # macOS 26.4 dropped the Swift Differentiation dylibs. Use the one in the store instead of `/usr/lib/swift`.
       install_name_tool "''${!outputLib}/lib/libswift_Differentiation.dylib" -id "''${!outputLib}/lib/libswift_Differentiation.dylib"
+
+      # Generate text-based stubs for the stdlib. Darwin links against the system library, so they aren’t necessary.
+      for dylib in "''${!outputLib}/lib/"*.dylib; do
+        dylibName=$(basename "$dylib" .dylib)
+        if [ "$dylibName" = "libswiftCompatibilitySpan" ]; then
+          # Follow the SDK, which symlinks `libswiftCompatibilitySpan.tbd` to `libswiftCore.tbd`.
+          ln -s libswiftCore.tbd "''${!outputDev}/lib/$dylibName.tbd"
+        else
+          ${lib.escapeShellArg (lib.getExe' llvmPackages_current.llvm "llvm-readtapi")} --filetype=tbd-v4 \
+            "$dylib" -o "''${!outputDev}/lib/$dylibName.tbd"
+        fi
+        if [ "$dylibName" != "libswift_Differentiation" ]; then
+          rm "$dylib"
+        fi
+      done
+
+      # The linker should be using the stubs in $dev, which will reference the dylibs in $lib.
+      # There’s no need to propagate it on Darwin.
+      rm -rf "''${!outputDev}/nix-support"
 
       # Clean up empty folders.
       rmdir "''${!outputLib}/lib/swift/${swiftPlatform}" "''${!outputLib}/lib/swift"
     '';
+
+    postFixup = null;
   })

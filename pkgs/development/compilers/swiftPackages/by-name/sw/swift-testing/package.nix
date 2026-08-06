@@ -78,7 +78,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Modern testing package for Swift";
     homepage = "https://github.com/swiftlang/swift-testing";
-    platforms = with lib.platforms; darwin ++ linux ++ windows;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     maintainers = lib.teams.swift.members;
   };

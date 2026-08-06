@@ -117,8 +117,9 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = {
     mainProgram = "swift-driver";
-    homepage = "https://github.com/apple/swift-driver";
+    homepage = "https://github.com/swiftlang/swift-driver";
     description = "Swift compiler driver written in Swift";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

@@ -3,7 +3,6 @@
   cmake,
   fetchFromGitHub,
   llvmPackages,
-  indexstore-db,
   ninja,
   replaceVars,
   sqlite,
@@ -160,7 +159,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Package Manager for the Swift Programming Language";
     homepage = "https://github.com/swiftlang/swift-package-manager";
-    inherit (swift.meta) platforms;
+    inherit (swift.meta) badPlatforms platforms;
     license = lib.licenses.asl20;
     maintainers = lib.teams.swift.members;
   };

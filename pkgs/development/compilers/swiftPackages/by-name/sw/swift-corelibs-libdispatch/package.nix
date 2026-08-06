@@ -47,6 +47,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./patches/0001-gnu-install-dirs.patch
+    # Nixpkgs includes `sys/cdefs.h` from Alpine, which breaks the build due to `-Werror`.
+    ./patches/0002-Don-t-include-sys-cdefs-on-Musl.patch
     # Fixes `implicit conversion changes signedness` error.
     (fetchpatch2 {
       url = "https://github.com/swiftlang/swift-corelibs-libdispatch/commit/38872e2d44d66d2fb94186988509defc734888a5.patch?full_index=1";
@@ -56,10 +58,18 @@ stdenv.mkDerivation (finalAttrs: {
 
   strictDeps = true;
 
-  # The Swift overlay is built separately using the no-overlay derivation as a base.
-  cmakeFlags = [ (lib.cmakeBool "ENABLE_SWIFT" useSwift) ];
-
-  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isWindows "-fuse-ld=lld";
+  cmakeFlags = [
+    # The Swift overlay is built separately using the no-overlay derivation as a base.
+    (lib.cmakeBool "ENABLE_SWIFT" useSwift)
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isMusl [
+    # Musl requires _GNU_SOURCE or the getprogname shim fails to build.
+    (lib.cmakeFeature "CMAKE_C_FLAGS" "-D_GNU_SOURCE=1")
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isWindows [
+    # Linking for Windows requires using LLD.
+    (lib.cmakeFeature "CMAKE_LINKER_TYPE" "LLD")
+  ];
 
   nativeBuildInputs = [
     cmake

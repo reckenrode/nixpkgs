@@ -121,7 +121,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Swift implementation of Foundation frameworks";
     homepage = "https://github.com/swiftlang/swift-foundation";
-    inherit (swift-minimal.meta) badPlatforms platforms;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

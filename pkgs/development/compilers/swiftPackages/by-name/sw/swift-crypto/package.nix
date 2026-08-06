@@ -14,7 +14,7 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-crypto";
-  version = "4.5.0";
+  version = "4.5.1";
 
   outputs = [
     "out"
@@ -25,7 +25,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-crypto";
     tag = finalAttrs.version;
-    hash = "sha256-vVeVImEmj76ML2bzYTpEhrUuqlxwA4GyIN9KQSA6Zy0=";
+    hash = "sha256-RLZmCrRmu6ZYre+VT4YzxpM8LgM7lLCbcMD/CVPiRTg=";
   };
 
   patches = [
@@ -77,6 +77,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     homepage = "https://github.com/apple/swift-crypto";
     description = "Open-source implementation of most of CryptoKit for Swift";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

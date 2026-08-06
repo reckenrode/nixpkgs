@@ -16,7 +16,7 @@ stdenv.mkDerivation {
     swiftpm
   ];
 
-  installCheckPhase = ''
+  installPhase = ''
     swift run -c release foundation-macros | grep 'Hello, foundation macros'
     touch "$out"
   '';

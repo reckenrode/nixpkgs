@@ -88,6 +88,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     homepage = "https://github.com/swift/swift-tools-support-core";
     description = "Common infrastructure code used by SwiftPM and llbuild";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

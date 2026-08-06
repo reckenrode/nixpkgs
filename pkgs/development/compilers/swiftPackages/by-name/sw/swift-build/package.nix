@@ -156,8 +156,9 @@ stdenv.mkDerivation (finalAttrs: {
   __structuredAttrs = true;
 
   meta = {
-    homepage = "https://github.com/apple/swift-build";
-    description = "High-level build system based on llvbuild";
+    homepage = "https://github.com/swiftlang/swift-build";
+    description = "High-level build system based on llbuild";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

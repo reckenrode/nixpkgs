@@ -11,7 +11,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-certificates";
-  version = "1.19.2";
+  version = "1.19.4";
 
   outputs = [
     "out"
@@ -22,7 +22,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-certificates";
     tag = finalAttrs.version;
-    hash = "sha256-2Vykp9ejvbaqYqMoWWiJR8Vx3wy+kVWtCFv/YfzW3TA=";
+    hash = "sha256-8I7/JAcGYrk22DymtlM2aiFXlQc3OijBAGL3DtoJWTE=";
   };
 
   postPatch = ''
@@ -66,6 +66,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     homepage = "https://github.com/apple/swift-certificates";
     description = "An implementation of X.509 for Swift";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

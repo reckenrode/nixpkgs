@@ -2,10 +2,8 @@
   lib,
   fetchFromGitHub,
   fetchSwiftPMDeps,
-  lmdb,
   stdenv,
   swift,
-  swift-lmdb,
   swiftpm,
   swift_release,
 }:
@@ -25,17 +23,13 @@ stdenv.mkDerivation (finalAttrs: {
     # SignalTests.testTrappingSignal tries to access `/bin/bash`. Replace it with the shell in the stdenv.
     substituteInPlace Tests/SwiftDocCUtilitiesTests/SignalTests.swift \
       --replace-fail '/bin/bash' ${lib.escapeShellArg stdenv.shell}
-
-    # SwiftLMDBTests.testVersion checks the LMDB version. Patch it to check for the version in Nixpkgs.
-    substituteInPlace Tests/SwiftDocCTests/Utility/LMDBTests.swift \
-      --replace-fail '0.9.70' ${lib.escapeShellArg (lib.getVersion lmdb)}
   '';
 
   strictDeps = true;
 
   swiftpmDeps = fetchSwiftPMDeps {
     inherit (finalAttrs) pname version src;
-    hash = "sha256-q3PZjzn2Zweyv5q2c4WgSe11FTp6EO3qxR/Qu3fOm6I=";
+    hash = "sha256-kJFuNw/pRn2A4UMvGcX3j04Faz44mriSz90u8hLdaZc=";
   };
 
   swiftpmFlags = [
@@ -46,7 +40,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     swift
-    swift-lmdb.devendorHook
     swiftpm
   ];
 
@@ -57,8 +50,8 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Documentation compiler for Swift";
     mainProgram = "docc";
-    homepage = "https://github.com/apple/swift-docc";
-    platforms = with lib.platforms; linux ++ darwin;
+    homepage = "https://github.com/swiftlang/swift-docc";
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

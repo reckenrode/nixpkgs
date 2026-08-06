@@ -23,7 +23,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   swiftpmDeps = fetchSwiftPMDeps {
     inherit (finalAttrs) pname version src;
-    hash = "sha256-rTIaafSzACVyjp/Q0NLdfUETosWfCtcWDdAAAL0/t+I=";
+    hash = "sha256-1KfyrQXE1HaO9WsuskzgiiEZxM/oelp40Jwzr8xJEL4=";
   };
 
   strictDeps = true;
@@ -49,7 +49,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Swift toolchain installer and manager";
     mainProgram = "swiftly";
     homepage = "https://github.com/swiftlang/swiftly";
-    platforms = with lib.platforms; linux ++ darwin;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux;
     license = lib.licenses.asl20;
     teams = [ lib.teams.swift ];
   };

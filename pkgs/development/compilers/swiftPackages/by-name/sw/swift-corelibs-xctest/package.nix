@@ -79,7 +79,7 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     description = "Framework for writing unit tests in Swift";
     homepage = "https://github.com/swiftlang/swift-corelibs-xctest";
-    platforms = with lib.platforms; darwin ++ linux ++ windows;
+    platforms = lib.platforms.darwin ++ lib.platforms.linux ++ lib.platforms.windows;
     license = lib.licenses.asl20;
     maintainers = lib.teams.swift.members;
   };

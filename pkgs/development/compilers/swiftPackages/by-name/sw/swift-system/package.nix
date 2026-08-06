@@ -2,7 +2,6 @@
   lib,
   cmake,
   fetchFromGitHub,
-  fetchpatch2,
   ninja,
   stdenv,
   swift,
@@ -10,7 +9,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-system";
-  version = "1.7.2";
+  version = "1.8.0";
 
   outputs = [
     "out"
@@ -21,17 +20,10 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "apple";
     repo = "swift-system";
     tag = finalAttrs.version;
-    hash = "sha256-Gz+AljaS+/f9eK/jOTOdlOsrnyolgdPE+71TqfPpVts=";
+    hash = "sha256-Bhna+OnwvS5nPTE261wLW+YAIntvRPRsDXoR2MqEVK4=";
   };
 
-  patches = [
-    ./patches/0001-gnu-install-dirs.patch
-    # Install missing headers
-    (fetchpatch2 {
-      url = "https://github.com/apple/swift-system/commit/776989a95523068065d4e9f7904c62eceb48c183.patch?full_index=1";
-      hash = "sha256-LRS2q2iiap0rmQXQV4NETpYVO518nqBKtKSDTCRwVBM=";
-    })
-  ];
+  patches = [ ./patches/0001-gnu-install-dirs.patch ];
 
   strictDeps = true;
 

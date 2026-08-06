@@ -1,5 +1,7 @@
 {
   lib,
+  apple-sdk_14,
+  apple-sdk_26,
   callPackage,
   llvmPackages,
   llvmPackages_current,
@@ -30,6 +32,9 @@ let
   hostTargetPackages = getHostTarget args;
 
   includeTesting = swiftc.supportsMacros && swift-testing != null;
+
+  # Need to use an older SDK if `swiftc` does not support macros.
+  propagated-sdk = if swiftc.supportsMacros then apple-sdk_26 else apple-sdk_14;
 
   # This makes sure that linking to `libdispatch.so` and `libBlocksRuntime.so` does not pull in previous stages
   # of the bootstrap toolchain.
@@ -120,7 +125,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   # Will effectively be `buildInputs` when swift is put in `nativeBuildInputs`.
   depsTargetTargetPropagated =
-    lib.optionals (stdlib != null) [
+    lib.optionals stdenv.targetPlatform.isDarwin [ propagated-sdk ]
+    ++ lib.optionals (stdlib != null) [
       # Propagate the stdlib to make sure the linker wrapper will pick up the dynamic and static libraries.
       stdlib
     ]
@@ -224,6 +230,12 @@ stdenv.mkDerivation (finalAttrs: {
       inherit callPackage;
       directory = ./tests;
     };
+
+    # Legacy aliases for the old Swift packaging. These should eventually be removed.
+    swift = lib.warn "`swift` is an alias for this (`swift`) package. Just use it directly." finalAttrs.finalPackage;
+    swiftArch = lib.warn "`swiftArch` is an alias for `stdenv.hostPlatform.swift.arch`." stdenv.hostPlatform.swift.arch;
+    swiftOs = lib.warn "`swiftOs` is an alias for `stdenv.hostPlatform.swift.platform`." stdenv.hostPlatform.swift.platform;
+    swiftLibSubDir = lib.warn "`swiftLibSubDir` is deprecated and shouldn’t be used. The standard library is located in the `stdlib` package in the `lib` folder." "lib/swift/${stdenv.hostPlatform.swift.platform}";
   };
 
   meta = {
