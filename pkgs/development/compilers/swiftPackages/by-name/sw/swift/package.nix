@@ -1,5 +1,6 @@
 {
   lib,
+  callPackage,
   llvmPackages,
   llvmPackages_current,
   patchelf,
@@ -14,18 +15,9 @@
   swift-foundation,
   swift-foundation-icu,
   swift-testing,
+  swift_release,
   swiftc,
   symlinkJoin,
-  swift_release,
-
-  # Tests
-  test-cxx-interop,
-  test-foundation-macros,
-  test-swift-differentiation,
-  test-swift-testing,
-  test-swift-scripting,
-  test-swift-repl,
-
   enableRepl ? true, # Whether to build and include LLDB for the Swift REPL.
 }@args:
 
@@ -38,16 +30,6 @@ let
   hostTargetPackages = getHostTarget args;
 
   includeTesting = swiftc.supportsMacros && swift-testing != null;
-
-  #  swift-foundation-macros = stdenvNoCC.mkDerivation {
-  #    pname = "swift-foundation-macros";
-  #    version = lib.getVersion swift-foundation;
-  #
-  #    buildCommand = ''
-  #      mkdir -p "$out/lib/swift/host/plugins"
-  #      ln -s ${lib.escapeShellArg hostTargetPackages.swift-foundation.dev}/lib/swift/host/plugins/libFoundationMacros${stdenv.hostPlatform.extensions.sharedLibrary} "$out/lib/swift/host/plugins"
-  #    '';
-  #  };
 
   # This makes sure that linking to `libdispatch.so` and `libBlocksRuntime.so` does not pull in previous stages
   # of the bootstrap toolchain.
@@ -105,29 +87,6 @@ let
       ]
     );
   };
-
-  #  devLinks = symlinkJoin {
-  #    name = "swift" + lib.removePrefix "swiftc" (lib.getName swiftc) + "-${swift_release}-dev";
-  #    paths = [
-  #      hostTargetPackages.swiftc.dev
-  #    ]
-  #    ++ lib.optionals includeTesting [
-  #      hostTargetPackages.swift-corelibs-xctest.dev
-  #      hostTargetPackages.swift-corelibs-xctest.out
-  #      hostTargetPackages.swift-testing.dev
-  #      hostTargetPackages.swift-testing.out
-  #    ]
-  #    ++ lib.optionals (stdlib != null) [
-  #      hostTargetPackages.stdlib.dev
-  #    ]
-  #    ++ lib.optionals (swift-driver != null) [
-  #      hostTargetPackages.swift-driver.dev
-  #    ]
-  #    ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
-  #      buildHostPackages.swift-corelibs-libdispatch.dev
-  #      # buildHostPackages.swift-corelibs-foundation.dev
-  #    ];
-  #  };
 
   docLinks = symlinkJoin {
     name = "swift" + lib.removePrefix "swiftc" (lib.getName swiftc) + "-${swift_release}-doc";
@@ -261,24 +220,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru = {
     inherit swiftc swift-driver;
+    tests = lib.packagesFromDirectoryRecursive {
+      inherit callPackage;
+      directory = ./tests;
+    };
   };
-
-  passthru.tests = {
-    inherit
-      test-cxx-interop
-      test-foundation-macros
-      test-swift-differentiation
-      test-swift-scripting
-      ;
-  }
-  // lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) {
-    inherit
-      test-swift-repl # Requires `debugserver` and debugging permission, which non-interactive sessions can’t get.
-      test-swift-testing # XCTest and Swift Testing does not run on Darwin.
-      ;
-  };
-
-  # passthru.tests = callPackage ./tests { };
 
   meta = {
     description = "Swift Programming Language";

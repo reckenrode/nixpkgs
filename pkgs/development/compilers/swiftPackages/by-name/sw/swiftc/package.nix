@@ -26,7 +26,6 @@
   swift-corelibs-libdispatch,
   swift-syntax,
   swift_release,
-  sysroot,
   xcbuild,
   xz,
   zlib,

@@ -14,10 +14,7 @@ let
   buildSharedLibrary = stdenv.buildPlatform.extensions.sharedLibrary;
 
   # For some reason, building swift-testing without swift-driver fails to build.
-  swift' = swift.override {
-    #    swift-foundation = null;
-    swift-testing = null;
-  };
+  swift' = swift.override { swift-testing = null; };
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-testing";

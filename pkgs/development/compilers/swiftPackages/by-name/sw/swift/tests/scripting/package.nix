@@ -3,7 +3,8 @@
   swift,
 }:
 
-runCommand "test-swift-scripting"
+# Make sure that Swift can load shared libraries and modules when used as a script interpreter.
+runCommand "swift-test-scripting"
   {
     nativeBuildInputs = [ swift ];
   }
