@@ -152,7 +152,6 @@
   withSsh ? withHeadlessDeps, # SFTP protocol
   withSvg ? withFullDeps, # SVG protocol
   withSvtav1 ? withHeadlessDeps && !stdenv.hostPlatform.isMinGW, # AV1 encoder/decoder (focused on speed and correctness)
-  withTensorflow ? false, # Tensorflow dnn backend support (Increases closure size by ~390 MiB)
   withTheora ? withHeadlessDeps, # Theora encoder
   withTwolame ? withFullDeps, # MP2 encoding
   withUavs3d ? withFullDeps, # AVS3 decoder
@@ -314,7 +313,6 @@
   librist,
   librsvg,
   libssh,
-  libtensorflow,
   libtheora,
   libv4l,
   libva,
@@ -477,15 +475,6 @@ stdenv.mkDerivation (
       ++ optionals (lib.versionAtLeast version "5.1") [
         ./nvccflags-cpp14.patch
       ]
-      ++ optionals (lib.versionAtLeast version "8.1.2") [
-        # https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/23825 (merged, but not backported to 8.1.x or 9.0.x)
-        # As git.ffmpeg.org deploys Anubis, we cannot fetch this patch reliably from there.
-        # So instead, we fetch it from Debian.
-        (fetchpatch2 {
-          url = "https://salsa.debian.org/multimedia-team/ffmpeg/-/raw/d52aea25bc9123bfaf61f7a7e5a0d9da01c8788d/debian/patches/0001-swscale-loongarch-fix-buffer-underflow-in-yuv2plane1.patch";
-          hash = "sha256-QRkb7z4Btyd9ZgV/1hh6Fb87IhkygFgVDqQdloXKL6Q=";
-        })
-      ]
       ++ optionals (lib.versionAtLeast version "7.0" && lib.versionOlder version "7.1.4") [
         (fetchpatch2 {
           name = "unbreak-hardcoded-tables.patch";
@@ -526,6 +515,15 @@ stdenv.mkDerivation (
           name = "svt-av1-4.0.0-compat.patch";
           url = "https://git.ffmpeg.org/gitweb/ffmpeg.git/patch/a5d4c398b411a00ac09d8fe3b66117222323844c";
           hash = "sha256-peIXXU5+5DRQc3Xdpz5V+xIN7Vohs0Dlal6mHiMryXc=";
+        })
+      ]
+      ++ optionals (lib.versionAtLeast version "8") [
+        # compatibility with openapv 1.1. remove when >8.1.3 and >9.0.2
+        # https://code.ffmpeg.org/FFmpeg/FFmpeg/pulls/24663
+        (fetchpatch2 {
+          name = "openapv-1.1-compat.patch";
+          url = "https://code.ffmpeg.org/FFmpeg/FFmpeg/commit/c54710db21c1827dbc3e47658a562525af0fe528.patch";
+          hash = "sha256-ENpPDEHtl3kj/UF52hfV+LwvO7CUaK8UvTy+OAYlWFw=";
         })
       ];
 
@@ -763,7 +761,7 @@ stdenv.mkDerivation (
       (enableFeature withSsh "libssh")
       (enableFeature withSvg "librsvg")
       (enableFeature withSvtav1 "libsvtav1")
-      (enableFeature withTensorflow "libtensorflow")
+      (enableFeature false "libtensorflow")
       (enableFeature withTheora "libtheora")
       (enableFeature withTwolame "libtwolame")
       (enableFeature withUavs3d "libuavs3d")
@@ -989,7 +987,6 @@ stdenv.mkDerivation (
       ++ optionals withSsh [ libssh ]
       ++ optionals withSvg [ librsvg ]
       ++ optionals withSvtav1 [ svt-av1 ]
-      ++ optionals withTensorflow [ libtensorflow ]
       ++ optionals withTheora [ libtheora ]
       ++ optionals withTwolame [ twolame ]
       ++ optionals withUavs3d [ uavs3d ]

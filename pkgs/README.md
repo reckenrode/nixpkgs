@@ -49,6 +49,11 @@ Before adding a new package, please consider the following questions:
 
 If any of these questions' answer is no, then you should probably not add the package.
 
+> [!NOTE]
+> Many upstream developers submit their own projects for inclusion in Nixpkgs.
+> While these PRs are welcomed, this is often a sign that the package doesn't yet meet the userbase requirements.
+> Consider waiting for another user of your project to submit it instead.
+
 Special care has to be taken with security-critical software components.
 Because entries in the Nix store are inert and do nothing by themselves, packages should be considered by their intended use, e.g. when used together with a NixOS module.
 
@@ -1310,7 +1315,7 @@ Each entry corresponds to a vulnerable version of a package; as a consequence:
 - One entry can contain several CVEs;
 - A single package can be concerned by several entries.
 
-Maintainers are encouraged to [subscribe to notifications](https://tracker.security.nixos.org/subscriptions/) for the packages they maintain.
+Maintainers are encouraged to [subscribe to notifications](https://tracker.security.nixos.org/user/subscriptions) for the packages they maintain.
 
 #### Triaging and Fixing
 

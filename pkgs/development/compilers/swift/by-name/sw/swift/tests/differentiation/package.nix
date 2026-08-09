@@ -17,6 +17,7 @@ stdenv.mkDerivation {
     swift
     swiftpm
   ];
+  swiftpmFlags = [ "-v" ];
 
   installPhase = ''
     swift run -c release differentiation 4 | grep '8.0'

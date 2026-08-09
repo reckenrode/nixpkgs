@@ -114,7 +114,8 @@ swiftpmInstallPhase() {
         install -D -t "${!outputLib}/lib" "${libsToInstall[@]}"
         # Only install modules if there are any library products.
         if [ -n "${modulesToInstall}" ]; then
-            install -D -t "${!outputInclude}/lib/swift/@swiftPlatform@" "${modulesToInstall[@]}"
+            mkdir -p "${!outputInclude}/lib/swift/@swiftPlatform@"
+            cp -Rv "${modulesToInstall[@]}" "${!outputInclude}/lib/swift/@swiftPlatform@"
         fi
     fi
 
@@ -130,7 +131,7 @@ makeSwiftPMFindLibs() {
     local -A swiftpmLibFlags
     isystem_seen=
     iframework_seen=
-    for flag in ${NIX_CFLAGS_COMPILE-}; do
+    for flag in ${NIX_CFLAGS_COMPILE-} ${NIX_LDFLAGS-}; do
         if test -n "$isystem_seen" && test -d "$flag"; then
             isystem_seen=
             swiftpmLibFlags["${flag}"]="-Xcc -isystem -Xcc"

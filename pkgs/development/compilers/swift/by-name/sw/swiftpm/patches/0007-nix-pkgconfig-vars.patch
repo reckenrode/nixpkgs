@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sat, 13 Dec 2025 22:59:18 -0500
-Subject: [PATCH 07/11] nix-pkgconfig-vars
+Subject: [PATCH 07/13] nix-pkgconfig-vars
 
 ---
  Sources/PackageLoading/PkgConfig.swift | 17 ++++++++++-------

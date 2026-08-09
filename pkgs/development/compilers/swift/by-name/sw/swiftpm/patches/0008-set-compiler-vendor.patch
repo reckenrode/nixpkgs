@@ -1,17 +1,17 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Sat, 13 Dec 2025 22:59:36 -0500
-Subject: [PATCH 08/11] set-compiler-vendor
+Subject: [PATCH 08/13] set-compiler-vendor
 
 ---
  Sources/PackageModel/UserToolchain.swift | 6 ------
  1 file changed, 6 deletions(-)
 
 diff --git a/Sources/PackageModel/UserToolchain.swift b/Sources/PackageModel/UserToolchain.swift
-index 45e5f05d4..a40c5eae6 100644
+index 9aa85f02d..06994641c 100644
 --- a/Sources/PackageModel/UserToolchain.swift
 +++ b/Sources/PackageModel/UserToolchain.swift
-@@ -469,13 +469,7 @@ public final class UserToolchain: Toolchain {
+@@ -480,13 +480,7 @@ public final class UserToolchain: Toolchain {
      }
  
      public func _isClangCompilerVendorApple() throws -> Bool? {

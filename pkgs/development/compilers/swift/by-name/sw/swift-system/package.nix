@@ -1,12 +1,21 @@
 {
   lib,
   cmake,
+  createToolchainStubsHook,
   fetchFromGitHub,
+  fixUnhelpfulCmakeRpathsHook,
   gitUpdater,
   ninja,
   stdenv,
   swift,
 }:
+
+let
+  swift' = swift.override {
+    enableRepl = false;
+    enableSourceKitLSP = false;
+  };
+in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "swift-system";
@@ -35,8 +44,12 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     cmake
+    createToolchainStubsHook
     ninja
-    swift
+    swift'
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isElf [
+    fixUnhelpfulCmakeRpathsHook
   ];
 
   postInstall = ''

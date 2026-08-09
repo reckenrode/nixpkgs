@@ -1,7 +1,9 @@
 {
   lib,
   cmake,
+  createToolchainStubsHook,
   fetchFromGitHub,
+  fixUnhelpfulCmakeRpathsHook,
   ninja,
   stdenv,
   swift,
@@ -16,7 +18,11 @@ let
 
   # Can’t use `swift-minimal`. Swift Testing fails to build using the classic Swift frontend.
   # It requires the new Swift compiler driver.
-  swift' = swift.override { swift-testing = null; };
+  swift' = swift.override {
+    swift-testing = null;
+    enableRepl = false;
+    enableSourceKitLSP = false;
+  };
 in
 
 stdenv.mkDerivation (finalAttrs: {
@@ -53,6 +59,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     cmake
+    createToolchainStubsHook
+    fixUnhelpfulCmakeRpathsHook
     ninja
     swift'
   ];
@@ -68,13 +76,22 @@ stdenv.mkDerivation (finalAttrs: {
           -id "''${!outputLib}/lib/libTesting${sharedLibrary}"
         install_name_tool "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}" \
           -id "''${!outputDev}/lib/swift/host/plugins/testing/libTestingMacros${buildSharedLibrary}"
+
+        # See below.
+        mv "''${!outputLib}/lib/lib_Testing_UIKit.dylib" lib_Testing_UIKit.dylib
       ''
     else
       ''
-        install -D -t "''${!outputDev}/lib/swift/host/plugins/testing" \
+        install -D -t "''${!outputDev}/lib/swift/host/plugins" \
           lib/swift/host/plugins/libTestingMacros${sharedLibrary}
       ''
   );
+
+  # Work around the following error when creating the toolchain stubs.
+  #     lib/lib_Testing_UIKit.dylib' truncated or malformed object (node is not an export node in export trie data at node: 0x0)
+  preFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    mv lib_Testing_UIKit.dylib "''${!outputLib}/lib/lib_Testing_UIKit.dylib"
+  '';
 
   __structuredAttrs = true;
 

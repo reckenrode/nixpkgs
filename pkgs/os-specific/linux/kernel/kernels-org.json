@@ -1,22 +1,12 @@
 {
     "testing": {
-        "version": "7.3-rc5",
-        "hash": "sha256:1slzmxyadz75p6lbk373x1waapyr6ggm6mz999sy5xkmidzg5d1n",
+        "version": "7.3-rc6",
+        "hash": "sha256:0ry76lwn873ks2a547ba95ydmx566n2dql0ij6k0y9vb7dkhcpfz",
         "lts": false
     },
     "6.1": {
         "version": "6.1.189",
         "hash": "sha256:0fclbhzzzjs98lxxc0bgvdih3ldcswjkb69gqsm0i6pwzsi39j1y",
-        "lts": true
-    },
-    "5.15": {
-        "version": "5.15.222",
-        "hash": "sha256:116zkhjvjsgc4cy9bcvqcdn6863022bpbdhw74j8a05xg5vc0vjd",
-        "lts": true
-    },
-    "5.10": {
-        "version": "5.10.271",
-        "hash": "sha256:0br5rj6b8rj2pl4b2al3ws0jg6a7xrn1bsyafka98djk1jydzf51",
         "lts": true
     },
     "6.6": {

@@ -29,6 +29,11 @@
 
 let
   swiftPlatform = stdenv.hostPlatform.swift.platform;
+
+  swift' = swift.override {
+    enableRepl = false;
+    enableSourceKitLSP = false;
+  };
 in
 
 # Swift Build is a dependency of SwiftPM. It must be built with CMake to avoid dependency cycles.
@@ -70,6 +75,11 @@ stdenv.mkDerivation (finalAttrs: {
     })
     # Don’t look in the build directory for bundles. Look only in the store.
     ./patches/0003-find-bundles-in-store.patch
+    # Swift Build makes assumptions about the layout of the toolchain (e.g., that paths begin with `usr`) that
+    # are not true for the toolchain Nixpkgs.
+    (replaceVars ./patches/0004-Help-Swift-Build-find-things-in-the-store.patch {
+      store-dir = builtins.storeDir;
+    })
   ];
 
   # FIXME: Make this a patch
@@ -100,7 +110,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     cmake
     ninja
-    swift
+    swift'
   ];
 
   buildInputs = [

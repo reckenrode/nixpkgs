@@ -15,6 +15,14 @@
   swift_sources,
 }:
 
+let
+  swift' = swift.override {
+    enableRepl = false;
+    enableSourceKitLSP = false;
+  };
+in
+
+# TODO: Convert to CMake
 stdenv.mkDerivation (finalAttrs: {
   pname = "sourcekit-lsp";
   version = swift_release;
@@ -70,7 +78,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pkg-config
-    swift
+    swift'
     swiftpm
   ];
 

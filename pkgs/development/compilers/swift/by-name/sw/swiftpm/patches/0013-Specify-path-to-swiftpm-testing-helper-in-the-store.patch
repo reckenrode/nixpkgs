@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Randy Eckenrode <randy@largeandhighquality.com>
+Date: Fri, 25 Sep 2026 20:49:51 -0400
+Subject: [PATCH 13/13] Specify path to `swiftpm-testing-helper` in the store
+
+---
+ Sources/PackageModel/UserToolchain.swift | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/Sources/PackageModel/UserToolchain.swift b/Sources/PackageModel/UserToolchain.swift
+index bea2ae681..a1ffb5ef6 100644
+--- a/Sources/PackageModel/UserToolchain.swift
++++ b/Sources/PackageModel/UserToolchain.swift
+@@ -555,10 +555,7 @@ public final class UserToolchain: Toolchain {
+         // The helper would be located in `.build/<config>` directory when
+         // SwiftPM is built locally and `usr/libexec/swift/pm` directory in
+         // an installed version.
+-        let binDirectories = self.swiftSDK.toolset.rootPaths +
+-            self.swiftSDK.toolset.rootPaths.map {
+-                $0.parentDirectory.appending(components: ["libexec", "swift", "pm"])
+-            }
++        let binDirectories = try [AbsolutePath(validating: "@out@/libexec/swift/pm")]
+ 
+         return try UserToolchain.getTool(
+             "swiftpm-testing-helper",
+-- 
+2.54.0
+

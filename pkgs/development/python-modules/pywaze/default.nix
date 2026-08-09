@@ -1,6 +1,7 @@
 {
   lib,
   buildPythonPackage,
+  curl-cffi,
   fetchFromGitHub,
   hatchling,
   httpx,
@@ -13,23 +14,24 @@
 
 buildPythonPackage (finalAttrs: {
   pname = "pywaze";
-  version = "1.2.1";
+  version = "1.2.4";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "eifinger";
     repo = "pywaze";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-+WRz4j1iq5fb3w/uM/wJ2mZNpOxAYbylB5jQS0BVwrY=";
+    hash = "sha256-ciSbI/giSqfdCbLaaRhFi3iNy3jbxhzOSpxXZmcPLjY=";
   };
 
-  nativeBuildInputs = [
-    pyprojectVersionPatchHook
-  ];
+  nativeBuildInputs = [ pyprojectVersionPatchHook ];
 
   build-system = [ hatchling ];
 
-  dependencies = [ httpx ];
+  dependencies = [
+    curl-cffi
+    httpx
+  ];
 
   nativeCheckInputs = [
     pytest-asyncio

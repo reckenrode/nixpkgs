@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Randy Eckenrode <randy@largeandhighquality.com>
 Date: Fri, 19 Dec 2025 20:12:12 -0500
-Subject: [PATCH 01/11] gnu-install-dirs
+Subject: [PATCH 01/13] gnu-install-dirs
 
 ---
  Sources/Basics/CMakeLists.txt                    | 6 +++---
@@ -30,10 +30,10 @@ Subject: [PATCH 01/11] gnu-install-dirs
  23 files changed, 59 insertions(+), 59 deletions(-)
 
 diff --git a/Sources/Basics/CMakeLists.txt b/Sources/Basics/CMakeLists.txt
-index e2910d09b..2f523dedb 100644
+index 5a3a43379..e3004f3c3 100644
 --- a/Sources/Basics/CMakeLists.txt
 +++ b/Sources/Basics/CMakeLists.txt
-@@ -97,7 +97,7 @@ target_link_options(Basics PRIVATE
+@@ -100,7 +100,7 @@ target_link_options(Basics PRIVATE
      "$<$<PLATFORM_ID:Darwin>:SHELL:-Xlinker -framework -Xlinker Security>")
  
  install(TARGETS Basics
@@ -60,10 +60,10 @@ index 495bd7a87..9b32067ff 100644
 +  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
  set_property(GLOBAL APPEND PROPERTY SwiftPM_EXPORTS Build)
 diff --git a/Sources/Commands/CMakeLists.txt b/Sources/Commands/CMakeLists.txt
-index b7e4e4b84..11c5e2a53 100644
+index 62d3333e9..6b1fcbfaf 100644
 --- a/Sources/Commands/CMakeLists.txt
 +++ b/Sources/Commands/CMakeLists.txt
-@@ -85,6 +85,6 @@ set_target_properties(Commands PROPERTIES
+@@ -97,6 +97,6 @@ set_target_properties(Commands PROPERTIES
    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_Swift_MODULE_DIRECTORY})
  
  install(TARGETS Commands
@@ -74,10 +74,10 @@ index b7e4e4b84..11c5e2a53 100644
 +  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 +  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 diff --git a/Sources/CoreCommands/CMakeLists.txt b/Sources/CoreCommands/CMakeLists.txt
-index 54bc10b2b..dbaadcb3f 100644
+index 4620ecb0f..3adbd2601 100644
 --- a/Sources/CoreCommands/CMakeLists.txt
 +++ b/Sources/CoreCommands/CMakeLists.txt
-@@ -29,6 +29,6 @@ set_target_properties(CoreCommands PROPERTIES
+@@ -32,6 +32,6 @@ set_target_properties(CoreCommands PROPERTIES
    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_Swift_MODULE_DIRECTORY})
  
  install(TARGETS CoreCommands
@@ -218,10 +218,10 @@ index 869c52c45..36d71c89c 100644
 +  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 +  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
 diff --git a/Sources/SPMBuildCore/CMakeLists.txt b/Sources/SPMBuildCore/CMakeLists.txt
-index 365e4f0fc..5d3430344 100644
+index 478a124b8..709cb5391 100644
 --- a/Sources/SPMBuildCore/CMakeLists.txt
 +++ b/Sources/SPMBuildCore/CMakeLists.txt
-@@ -43,7 +43,7 @@ target_link_libraries(SPMBuildCore PUBLIC
+@@ -45,7 +45,7 @@ target_link_libraries(SPMBuildCore PUBLIC
  
  
  install(TARGETS SPMBuildCore
@@ -248,10 +248,10 @@ index 8e1377d9b..e660bae2d 100644
 +  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
  set_property(GLOBAL APPEND PROPERTY SwiftPM_EXPORTS SourceControl)
 diff --git a/Sources/SwiftSDKCommand/CMakeLists.txt b/Sources/SwiftSDKCommand/CMakeLists.txt
-index 4dcfa36a2..ccca0ac3b 100644
+index d4fd86bb5..fc2553796 100644
 --- a/Sources/SwiftSDKCommand/CMakeLists.txt
 +++ b/Sources/SwiftSDKCommand/CMakeLists.txt
-@@ -29,6 +29,6 @@ set_target_properties(SwiftSDKCommand PROPERTIES
+@@ -24,6 +24,6 @@ set_target_properties(SwiftSDKCommand PROPERTIES
    INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_Swift_MODULE_DIRECTORY})
  
  install(TARGETS SwiftSDKCommand

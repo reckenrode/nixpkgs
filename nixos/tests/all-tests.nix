@@ -594,6 +594,7 @@ in
   echoip = runTest ./echoip.nix;
   ejabberd = runTest ./xmpp/ejabberd.nix;
   elk = handleTestOn [ "x86_64-linux" ] ./elk.nix { };
+  elk-zone = runTest ./web-apps/elk.nix;
   emacs-daemon = runTest ./emacs-daemon.nix;
   endlessh = runTest ./endlessh.nix;
   endlessh-go = runTest ./endlessh-go.nix;
@@ -731,6 +732,7 @@ in
     inherit runTest;
     package = pkgsLinux.garage_2;
   };
+  garm-incus = runTestOn [ "x86_64-linux" ] ./garm-incus.nix;
   gatus = runTest ./gatus.nix;
   gemstash = import ./gemstash.nix { inherit pkgs runTest; };
   geoclue2 = runTest ./geoclue2.nix;
@@ -1391,6 +1393,7 @@ in
   openafs = runTest ./openafs.nix;
   openarena = runTest ./openarena.nix;
   openbao = runTest ./openbao.nix;
+  openbao-agent = runTest ./openbao-agent.nix;
   opencloud = runTest ./opencloud.nix;
   openldap = runTest ./openldap.nix;
   openresty-lua = runTest ./openresty-lua.nix;
@@ -1499,7 +1502,6 @@ in
   plikd = runTest ./plikd.nix;
   plotinus = runTest ./plotinus.nix;
   pocket-id = runTest ./pocket-id.nix;
-  podgrab = runTest ./podgrab.nix;
   podman = handleTestOn [ "aarch64-linux" "x86_64-linux" ] ./podman/default.nix { };
   podman-tls-ghostunnel = handleTestOn [
     "aarch64-linux"
@@ -1786,6 +1788,7 @@ in
   syncthing-init = runTest ./syncthing/init.nix;
   syncthing-many-devices = runTest ./syncthing/many-devices.nix;
   syncthing-no-settings = runTest ./syncthing/no-settings.nix;
+  syncthing-private-relay = runTest ./syncthing/private-relay.nix;
   syncthing-relay = runTest ./syncthing/relay.nix;
   sysfs = runTest ./sysfs.nix;
   sysinit-reactivation = runTest ./sysinit-reactivation.nix;
@@ -2030,7 +2033,14 @@ in
   webhook = runTest ./webhook.nix;
   weblate = runTest ./web-apps/weblate.nix;
   wg-access-server = runTest ./wg-access-server.nix;
-  whisparr = runTest ./whisparr.nix;
+  whisparr_2 = runTest {
+    imports = [ ./whisparr.nix ];
+    _module.args.getPackage = pkgs: pkgs.whisparr_2;
+  };
+  whisparr_3 = runTest {
+    imports = [ ./whisparr.nix ];
+    _module.args.getPackage = pkgs: pkgs.whisparr_3;
+  };
   whoami = runTest ./whoami.nix;
   whois = runTest ./whois.nix;
   whoogle-search = runTest ./whoogle-search.nix;
