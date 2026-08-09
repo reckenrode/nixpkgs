@@ -25,8 +25,8 @@ stdenv.mkDerivation {
 
   __structuredAttrs = true;
 
-  meta.badPlatforms = [
-    # This test won’t work on Darwin until XCTest is modified to work on Darwin without requiring Xcode.
-    lib.systems.inspect.patterns.isDarwin
-  ];
+#  meta.badPlatforms = [
+#    # This test won’t work on Darwin until XCTest is modified to work on Darwin without requiring Xcode.
+#    lib.systems.inspect.patterns.isDarwin
+#  ];
 }

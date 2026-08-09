@@ -24,7 +24,7 @@ stdenv.mkDerivation (finalAttrs: {
   postPatch =
     # SignalTests.testTrappingSignal tries to access `/bin/bash`. Replace it with the shell in the stdenv.
     ''
-      substituteInPlace Tests/SwiftDocCUtilitiesTests/SignalTests.swift \
+      substituteInPlace Tests/DocCCommandLineTests/SignalTests.swift \
         --replace-fail '/bin/bash' ${lib.escapeShellArg stdenv.shell}
     '';
 
