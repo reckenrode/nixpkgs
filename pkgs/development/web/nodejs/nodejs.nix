@@ -472,6 +472,9 @@ let
             ++ lib.optional (
               majorVersion == "22" && stdenv.buildPlatform.isDarwin
             ) "test/sequential/test-http-server-request-timeouts-mixed.js"
+            ++ lib.optional (
+              majorVersion == "24" && stdenv.buildPlatform.isDarwin
+            ) "test/parallel/test-worker-memory.js"
           )
         }"
       ];
