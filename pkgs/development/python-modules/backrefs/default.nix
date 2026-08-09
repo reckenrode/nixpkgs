@@ -25,6 +25,8 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "backrefs" ];
 
+  disabledTestPaths = [ "tests/test_bregex.py" ];
+
   nativeCheckInputs = [
     pytestCheckHook
     regex

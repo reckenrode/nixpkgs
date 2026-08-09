@@ -42,7 +42,7 @@ stdenv.mkDerivation (
         (luapkgs.lpeg.overrideAttrs (old: {
           preConfigure = ''
             # neovim wants clang .dylib
-            substituteInPlace Makefile \
+            substituteInPlace makefile \
               --replace-fail "CC = gcc" "CC = clang" \
               --replace-fail "-bundle" "-dynamiclib" \
               --replace-fail "lpeg.so" "lpeg.dylib"
