@@ -1,5 +1,5 @@
 let
-  autoCalledPackages = import ./by-name-overlay.nix ../development/compilers/swiftPackages/by-name;
+  autoCalledPackages = import ./by-name-overlay.nix ../development/compilers/swift_ng/by-name;
 in
 
 {
