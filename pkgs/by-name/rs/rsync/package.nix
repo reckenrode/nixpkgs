@@ -5,6 +5,7 @@
 
   updateAutotoolsGnuConfigScriptsHook,
   bashNonInteractive,
+  locale,
   perl,
   python3,
   libiconv,
@@ -104,6 +105,7 @@ stdenv.mkDerivation (finalAttrs: {
   passthru.tests = { inherit (nixosTests) rsyncd; };
 
   nativeCheckInputs = [
+    locale
     python3
   ]
   # output-control-chars_test.py runs `locale -a`, which is missing from PATH

@@ -64,8 +64,7 @@ buildPythonPackage rec {
     zstd = [ zstandard ];
   };
 
-  # trustme uses pyopenssl
-  doCheck = !stdenv.hostPlatform.isDarwin;
+  doCheck = true;
 
   nativeCheckInputs = [
     chardet

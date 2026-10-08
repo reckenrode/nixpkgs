@@ -3,6 +3,7 @@
   stdenv,
   fetchzip,
   fetchpatch,
+  autoreconfHook,
   pkg-config,
   boost,
   doxygen,
@@ -19,7 +20,17 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-1At2aFAdPeoDKcsrv1hpZ1Eig0//tc3jaRpg1qn14xI=";
   };
 
-  nativeBuildInputs = [ pkg-config ];
+  postPatch =
+    # Fix missing symbol errors. _ucnv_open, _ucnv_close, and various _ulock symbols are in icu-uc.
+    ''
+      substituteInPlace configure.ac \
+        --replace-fail 'PKG_CHECK_MODULES([ICU], [icu-i18n])' 'PKG_CHECK_MODULES([ICU], [icu-i18n icu-uc])'
+    '';
+
+  nativeBuildInputs = [
+    autoreconfHook
+    pkg-config
+  ];
 
   buildInputs = [
     boost
@@ -53,6 +64,5 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.mpl20;
     maintainers = [ ];
     platforms = lib.platforms.all;
-    broken = stdenv.hostPlatform.isDarwin;
   };
 })

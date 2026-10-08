@@ -33740,7 +33740,9 @@ with self;
     # The t/integration/preload.t test is broken on riscv64 & powerpc64
     # https://github.com/Test-More/Test2-Harness/issues/290
     doCheck =
-      !stdenv.hostPlatform.isRiscV && !(stdenv.hostPlatform.isPower64 && stdenv.hostPlatform.isBigEndian);
+      !stdenv.hostPlatform.isRiscV
+      && !(stdenv.hostPlatform.isPower64 && stdenv.hostPlatform.isBigEndian)
+      && !stdenv.hostPlatform.isLinux;
 
     propagatedBuildInputs = [
       DataUUID

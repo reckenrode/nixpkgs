@@ -27,17 +27,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     "-DFMI_VERSION=${toString FMIVersion}"
+    (lib.cmakeFeature "FMI_ARCHITECTURE"  stdenv.hostPlatform.parsed.cpu.name)
   ];
 
-  env = lib.optionalAttrs (FMIVersion == 3) {
+  env = lib.optionalAttrs (stdenv.hostPlatform.cc.isGNU && FMIVersion == 3) {
     CFLAGS = "-Wno-stringop-truncation";
   };
 
   meta = {
-    # CMakeLists.txt explicitly states support for aarch64-darwin, but
-    # the build fails in a Nix environment. C.f.
-    # <https://github.com/NixOS/nixpkgs/pull/397658#issuecomment-2851958172>.
-    broken = stdenv.hostPlatform.isDarwin;
     description = "Functional Mock-up Units for development, testing and debugging";
     homepage = "https://github.com/modelica/Reference-FMUs";
     license = lib.licenses.bsd2;

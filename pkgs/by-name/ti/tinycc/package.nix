@@ -83,10 +83,6 @@ stdenv.mkDerivation (finalAttrs: {
     # build cross compilers
     "--enable-cross"
   ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [
-    # The bounds checker has an unresolved arm64 atomic helper on Darwin.
-    "--config-bcheck=no"
-  ]
   ++ lib.optionals stdenv.hostPlatform.isMusl [
     "--config-musl"
   ];
