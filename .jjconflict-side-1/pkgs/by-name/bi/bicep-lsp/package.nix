@@ -43,7 +43,7 @@ buildDotnetModule rec {
     stdenv.cc.cc.lib
   ];
 
-  doCheck = !stdenv.hostPlatform.isDarwin; # mono is not available on aarch64-darwin
+  doCheck = true;
 
   meta = {
     description = "Domain Specific Language (DSL) for deploying Azure resources declaratively";

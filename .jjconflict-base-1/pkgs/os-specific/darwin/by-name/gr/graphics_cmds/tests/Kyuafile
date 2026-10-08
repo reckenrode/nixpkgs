@@ -1,5 +1,0 @@
-syntax(2)
-
-test_suite("graphics_cmds")
-atf_test_program{name="copypng.sh"}
-atf_test_program{name="tiffutil.sh"}

@@ -31,8 +31,10 @@ stdenv.mkDerivation (finalAttrs: {
     })
   ];
 
-  # fix build w/ glibc-2.44
-  env.NIX_CFLAGS_COMPILE = "-Wno-error=discarded-qualifiers";
+  env = lib.optionalAttrs stdenv.cc.isGNU {
+    # fix build w/ glibc-2.44
+    NIX_CFLAGS_COMPILE = "-Wno-error=discarded-qualifiers";
+  };
 
   postPatch = ''
     substituteInPlace Makefile \
@@ -76,6 +78,5 @@ stdenv.mkDerivation (finalAttrs: {
     maintainers = with lib.maintainers; [ pluiedev ];
     mainProgram = "x16emu";
     inherit (SDL2.meta) platforms;
-    broken = stdenv.hostPlatform.isAarch64; # ofborg fails to compile it
   };
 })

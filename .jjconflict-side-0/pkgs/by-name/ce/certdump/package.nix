@@ -16,6 +16,11 @@ buildDotnetModule {
     hash = "sha256-86s6KLP0DliKOr0fVId7SGN333b7HkiL5p/q0vazwMc=";
   };
 
+  postPatch = ''
+    substituteInPlace CertDump/CertDump.csproj \
+      --replace-fail '<TargetFramework>net5.0</TargetFramework>' '<TargetFramework>net5.0</TargetFramework>'
+  '';
+
   projectFile = [ "CertDump.sln" ];
   nugetDeps = ./deps.json;
 

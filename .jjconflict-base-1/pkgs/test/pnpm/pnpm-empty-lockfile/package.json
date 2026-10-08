@@ -1,6 +1,0 @@
-{
-    "name": "pnpm-empty-lockfile",
-    "main": "main.mjs",
-    "dependencies": {
-    }
-}

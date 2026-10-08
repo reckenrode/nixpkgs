@@ -68,6 +68,7 @@ stdenv.mkDerivation rec {
     homepage = "http://www.iozone.org/";
     license = lib.licenses.unfreeRedistributable;
     platforms = [
+      "aarch64-darwin"
       "i686-linux"
       "x86_64-linux"
       "aarch64-linux"

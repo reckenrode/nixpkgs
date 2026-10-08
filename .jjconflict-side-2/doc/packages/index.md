@@ -1,3 +1,0 @@
-# Packages {#chap-packages}
-
-This chapter contains information about how to use and maintain the Nix expressions for a number of specific packages, such as the Linux kernel or X.org.

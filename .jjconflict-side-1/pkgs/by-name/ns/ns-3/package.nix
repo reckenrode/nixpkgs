@@ -167,8 +167,7 @@ stdenv.mkDerivation (finalAttrs: {
       teto
       rgrunbla
     ];
-    # never built on aarch64-darwin since first introduction in nixpkgs
-    broken =
-      stdenv.hostPlatform.isDarwin || (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64);
+    # never built on aarch64-linux since first introduction in nixpkgs
+    broken = stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64;
   };
 })

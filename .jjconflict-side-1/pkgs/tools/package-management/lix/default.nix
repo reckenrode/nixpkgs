@@ -34,6 +34,12 @@
   confDir ? "/etc",
 }:
 let
+  fixTarballDeadlockPatch = fetchpatch {
+    name = "fix-tarball-deadlock.patch";
+    url = "https://git.lix.systems/lix-project/lix/commit/45e355a168998bc52c3c1cd35eae76ca258ef9e8.patch";
+    hash = "sha256-jkqbSjS8EGwK1QWji5UPm2dXERF30XXAiA69Nw5wq8s=";
+  };
+
   lixFunctional2TimeoutPatch = fetchpatch {
     name = "lix-f2-increase-timeouts-and-max-worker-count.patch";
     url = "https://git.lix.systems/lix-project/lix/commit/c6d22874d6dffc9646279601ad546c1d78d9a409.patch";
@@ -184,6 +190,7 @@ lib.makeExtensible (
       lix-args = (import ./2.96.nix { inherit fetchFromGitea rustPlatform nix-update-script; }) // {
         patches = [
           ./lix-rs-tests-whole-archive.patch
+          fixTarballDeadlockPatch
           ./darwin-libcxx-nodiscard.patch
         ];
       };

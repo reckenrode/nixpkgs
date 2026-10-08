@@ -9,10 +9,22 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "NuSMV";
   version = "2.7.0";
 
-  src = fetchurl {
-    url = "https://nusmv.fbk.eu/distrib/${finalAttrs.version}/NuSMV-${finalAttrs.version}-linux64.tar.xz";
-    sha256 = "019d1pa5aw58n11is1024hs8d520b3pp2iyix78vp04yv7wd42l8";
-  };
+  src =
+    with stdenv.hostPlatform;
+    fetchurl (
+      if isx86_64 && isLinux then
+        {
+          url = "https://nusmv.fbk.eu/distrib/${finalAttrs.version}/NuSMV-${finalAttrs.version}-linux64.tar.xz";
+          sha256 = "019d1pa5aw58n11is1024hs8d520b3pp2iyix78vp04yv7wd42l8";
+        }
+      else if isDarwin then
+        {
+          url = "https://nusmv.fbk.eu/distrib/${finalAttrs.version}/NuSMV-${finalAttrs.version}-macos-universal.tar.xz";
+          sha256 = "098wllv4yx284qv9nsi8kd5pgh10cr1hig01a1p2rxgfmrki52wm";
+        }
+      else
+        throw "only linux x86_64 and mac are currently supported"
+    );
 
   nativeBuildInputs = [ autoPatchelfHook ];
 

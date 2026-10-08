@@ -23,7 +23,11 @@ stdenv.mkDerivation {
 
   nativeBuildInputs = [ pkg-config ];
 
-  makeFlags = [ "PREFIX=${placeholder "out"}" ];
+  makeFlags = [
+    "PREFIX=${placeholder "out"}"
+    # Needed to make sure Darwin is evaluated as aarch64 not arm64.
+    "TARGET_PROCESSOR=${stdenv.hostPlatform.parsed.cpu.name}"
+  ];
 
   postPatch = ''
     patchShebangs ./dpf/utils/generate-ttl.sh

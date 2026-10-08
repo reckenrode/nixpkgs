@@ -1,6 +1,0 @@
-{
-  mkKdeDerivation,
-}:
-mkKdeDerivation {
-  pname = "union";
-}

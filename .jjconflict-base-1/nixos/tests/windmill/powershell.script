@@ -1,6 +1,0 @@
-param($Msg, $Dflt = "default value", [int]$Nb = 3)
-
-# WARN; Cannot download dependency modules from internet during sandbox testing!
-
-# the last line of the stdout is the return value
-Write-Output "Hello $Msg"

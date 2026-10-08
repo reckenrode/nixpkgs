@@ -1,5 +1,0 @@
-module ShortcutRecorder {
-  umbrella header "ShortcutRecorder.h"
-  export *
-  module * { export * }
-}

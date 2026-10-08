@@ -56,6 +56,5 @@ edk2.mkDerivation "ShellPkg/ShellPkg.dsc" (finalAttrs: {
       LunNova
       mjoerg
     ];
-    broken = stdenv.hostPlatform.isDarwin;
   };
 })
