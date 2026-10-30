@@ -35,4 +35,5 @@
   ./0008-Disable-availability-checking-when-building-the-Runt.patch
   # Building the _Differentiation module needs _Builtin_float on Darwin.
   ./0009-Fix-_Differentiation-module-build-on-Darwin.patch
+#  ../../test.patch
 ]

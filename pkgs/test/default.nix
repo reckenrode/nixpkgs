@@ -125,6 +125,11 @@ in
       stdenv = pkgs.llvmPackages.stdenv;
     }
   );
+  hardeningFlags-swift = recurseIntoAttrs (
+    callPackage ./cc-wrapper/hardening.nix {
+        stdenv = pkgs.overrideCC pkgs.stdenv;
+    }
+  );
 
   config = callPackage ./config.nix { };
 
