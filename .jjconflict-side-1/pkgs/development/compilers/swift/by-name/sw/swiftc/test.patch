@@ -1,0 +1,480 @@
+diff --git a/include/swift/ClangImporter/ClangImporter.h b/include/swift/ClangImporter/ClangImporter.h
+index feff598242..4092d3384e 100644
+--- a/include/swift/ClangImporter/ClangImporter.h
++++ b/include/swift/ClangImporter/ClangImporter.h
+@@ -258,6 +258,7 @@ virtual void lookupValue(StringRef name, std::optional<ClangTypeKind> kind,
+ 
+   static llvm::opt::InputArgList
+   createClangArgs(const ClangImporterOptions &ClangImporterOpts,
++                  const LangOptions &LangOpts,
+                   const SearchPathOptions &SearchPathOpts,
+                   clang::driver::Driver &clangDriver);
+ 
+diff --git a/include/swift/Nixpkgs/Hardening.h b/include/swift/Nixpkgs/Hardening.h
+new file mode 100644
+index 0000000000..2b4910b8be
+--- /dev/null
++++ b/include/swift/Nixpkgs/Hardening.h
+@@ -0,0 +1,36 @@ extern std::pair<std::vector<std::string>, std::vector<std::string>> getClangImp
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++#pragma once
++
++#include "llvm/TargetParser/Triple.h"
++
++#include <iterator>
++#include <string>
++#include <vector>
++
++extern std::pair<std::vector<std::string>, std::vector<std::string>> getClangImporterHardeningFlagsForTarget(const llvm::Triple& triple,
++                                                                                                             bool isCC1);
++
++template<typename T>
++void addHardeningFlagsForTarget(std::vector<T> &invocationArgStrs,
++                                const llvm::Triple& triple,
++                                bool skipFirstArgument = false,
++                                bool isCC1 = false) {
++  auto [hardeningFlagsBefore, hardeningFlagsAfter] = getClangImporterHardeningFlagsForTarget(triple, isCC1);
++
++  invocationArgStrs.reserve(invocationArgStrs.size() + hardeningFlagsBefore.size() + hardeningFlagsAfter.size());
++
++  std::vector<T> hardeningFlagsBeforeT;
++  hardeningFlagsBeforeT.reserve(hardeningFlagsBefore.size());
++  for (const auto& flag : hardeningFlagsBefore) {
++    hardeningFlagsBeforeT.emplace_back(flag.c_str());
++  }
++  // Sometimes the first item is `clang` or `-cc1`. Sometimes we need to keep it where it is.
++  invocationArgStrs.insert(
++    next(begin(invocationArgStrs), skipFirstArgument ? 1 : 0),
++    begin(hardeningFlagsBeforeT), end(hardeningFlagsBeforeT)
++  );
++
++  for (const auto& flag : hardeningFlagsAfter) {
++    invocationArgStrs.emplace_back(flag.c_str());
++  }
++}
+diff --git a/lib/ClangImporter/ClangImporter.cpp b/lib/ClangImporter/ClangImporter.cpp
+index 9f3f44a3f2..ed42d97e7a 100644
+--- a/lib/ClangImporter/ClangImporter.cpp
++++ b/lib/ClangImporter/ClangImporter.cpp
+@@ -50,6 +50,7 @@
+ #include "swift/ClangImporter/ClangImporterRequests.h"
+ #include "swift/ClangImporter/ClangModule.h"
+ #include "swift/Frontend/CachingUtils.h"
++#include "swift/Nixpkgs/Hardening.h"
+ #include "swift/Nixpkgs/NixCC.h"
+ #include "swift/Parse/ParseVersion.h"
+ #include "swift/Strings.h"
+@@ -633,6 +634,9 @@ void importer::getNormalInvocationArguments(
+   // from the sysroot on most platforms in Nixpkgs.
+   addFlagsFromNixCC(invocationArgStrs, "libcxx-cxxflags");
+ 
++  // Ensure ClangImporter applies hardening flags.
++  addHardeningFlagsForTarget(invocationArgStrs, triple, /* skipFirstArgument */ true);
++
+   if (LangOpts.EnableCXXInterop) {
+     if (auto path = getCxxShimModuleMapPath(searchPathOpts, LangOpts, triple)) {
+       invocationArgStrs.push_back((Twine("-fmodule-map-file=") + *path).str());
+diff --git a/lib/ClangImporter/ClangIncludePaths.cpp b/lib/ClangImporter/ClangIncludePaths.cpp
+index 73ef848796..200282d559 100644
+--- a/lib/ClangImporter/ClangIncludePaths.cpp
++++ b/lib/ClangImporter/ClangIncludePaths.cpp
+@@ -18,6 +18,7 @@
+ #include "swift/Basic/Assertions.h"
+ #include "swift/Basic/Platform.h"
+ #include "swift/ClangImporter/ClangImporter.h"
++#include "swift/Nixpkgs/Hardening.h"
+ #include "swift/Nixpkgs/NixCC.h"
+ #include "clang/Driver/Driver.h"
+ #include "clang/Driver/ToolChain.h"
+@@ -193,6 +194,7 @@ static std::optional<Path> findFirstIncludeDir(
+ 
+ llvm::opt::InputArgList
+ ClangImporter::createClangArgs(const ClangImporterOptions &ClangImporterOpts,
++                               const LangOptions &LangOpts,
+                                const SearchPathOptions &SearchPathOpts,
+                                clang::driver::Driver &clangDriver) {
+   // Flags passed to Swift with `-Xcc` might affect include paths.
+@@ -210,6 +212,9 @@ ClangImporter::createClangArgs(const ClangImporterOptions &ClangImporterOpts,
+   // from the sysroot on most platforms in Nixpkgs.
+   addFlagsFromNixCC(clangArgs, "libcxx-cxxflags");
+ 
++  // Ensure ClangImporter applies hardening flags.
++  addHardeningFlagsForTarget(clangArgs, LangOpts.Target);
++
+   llvm::opt::InputArgList clangDriverArgs =
+       parseClangDriverArgs(clangDriver, clangArgs);
+   // If a sysroot was explicitly passed to Swift, make sure to pass it to the
+@@ -242,7 +247,7 @@ getLibcFileMapping(const ASTContext &ctx, StringRef modulemapFileName,
+       ClangImporter::createClangDriver(ctx.LangOpts, ctx.ClangImporterOpts,
+                                        vfs);
+   auto clangDriverArgs = ClangImporter::createClangArgs(
+-      ctx.ClangImporterOpts, ctx.SearchPathOpts, clangDriver);
++      ctx.ClangImporterOpts, ctx.LangOpts, ctx.SearchPathOpts, clangDriver);
+ 
+   llvm::opt::ArgStringList includeArgStrings;
+   const auto &clangToolchain =
+@@ -322,7 +327,7 @@ static void getLibStdCxxFileMapping(
+       ClangImporter::createClangDriver(ctx.LangOpts, ctx.ClangImporterOpts,
+                                        vfs);
+   auto clangDriverArgs = ClangImporter::createClangArgs(
+-      ctx.ClangImporterOpts, ctx.SearchPathOpts, clangDriver);
++      ctx.ClangImporterOpts, ctx.LangOpts, ctx.SearchPathOpts, clangDriver);
+ 
+   llvm::opt::ArgStringList stdlibArgStrings;
+   const auto &clangToolchain =
+@@ -524,7 +529,7 @@ void GetWindowsFileMappings(
+       ClangImporter::createClangDriver(Context.LangOpts,
+                                        Context.ClangImporterOpts, driverVFS);
+   const llvm::opt::InputArgList Args = ClangImporter::createClangArgs(
+-      Context.ClangImporterOpts, Context.SearchPathOpts, Driver);
++      Context.ClangImporterOpts, Context.LangOpts, Context.SearchPathOpts, Driver);
+   const clang::driver::ToolChain &ToolChain = Driver.getToolChain(Args, Triple);
+   llvm::vfs::FileSystem &VFS = ToolChain.getVFS();
+ 
+diff --git a/lib/Frontend/CompilerInvocation.cpp b/lib/Frontend/CompilerInvocation.cpp
+index 933165c9c0..7407b54979 100644
+--- a/lib/Frontend/CompilerInvocation.cpp
++++ b/lib/Frontend/CompilerInvocation.cpp
+@@ -411,7 +411,7 @@ void CompilerInvocation::computeCXXStdlibOptions() {
+     auto [clangDriver, clangDiagEngine, clangDiagOpts] =
+         ClangImporter::createClangDriver(LangOpts, ClangImporterOpts);
+     auto clangDriverArgs = ClangImporter::createClangArgs(
+-        ClangImporterOpts, SearchPathOpts, clangDriver);
++        ClangImporterOpts, LangOpts, SearchPathOpts, clangDriver);
+     auto &clangToolchain =
+         clangDriver.getToolChain(clangDriverArgs, LangOpts.Target);
+     auto cxxStdlibKind = clangToolchain.GetCXXStdlibType(clangDriverArgs);
+diff --git a/lib/Nixpkgs/CMakeLists.txt b/lib/Nixpkgs/CMakeLists.txt
+index 691ce9f442..ce6d5e5251 100644
+--- a/lib/Nixpkgs/CMakeLists.txt
++++ b/lib/Nixpkgs/CMakeLists.txt
+@@ -1,4 +1,8 @@
+ # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+ 
+ add_swift_host_library(nixpkgsStuff STATIC
++  Hardening.cpp
+   NixCC.cpp)
++
++set_target_properties(nixpkgsStuff PROPERTIES
++  CXX_STANDARD 20)
+diff --git a/lib/Nixpkgs/Hardening.cpp b/lib/Nixpkgs/Hardening.cpp
+new file mode 100644
+index 0000000000..52e973391f
+--- /dev/null
++++ b/lib/Nixpkgs/Hardening.cpp
+@@ -0,0 +1,315 @@ static std::vector<std::string> getNixHardeningVars(const std::string& suffixSal
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++
++// This (more or less) duplicates the logic of `pkgs/build-support/cc-wrapper/add-hardening.sh`.
++// Why? We don’t wrap Swift. We also want to support per-target hardening, so that we don’t need
++// to rebuild Swift to harden different targets. `-target <triple>` should do the right thing.
++
++#include "swift/Nixpkgs/Hardening.h"
++
++#include "llvm/Support/Process.h"
++
++#include <format>
++#include <functional>
++#include <iostream>
++#include <map>
++#include <mutex>
++#include <unordered_map>
++#include <unordered_set>
++
++using llvm::sys::Process;
++
++std::once_flag NixDebugFlag;
++int NixDebugLevel;
++
++std::map<std::pair<std::string, bool>, std::pair<std::vector<std::string>, std::vector<std::string>>> NixHardeningFlagsCache;
++
++const std::string NIX_HARDENING_ENABLE_VAR{"NIX_HARDENING_ENABLE"};
++const std::string NIX_CC_WRAPPER_TARGET_VAR{"NIX_CC_WRAPPER_TARGET"};
++
++using ApplyHardeningFunction = std::function<void(std::vector<std::string>&, std::vector<std::string>&, const llvm::Triple&, bool)>;
++
++const std::unordered_map<std::string, ApplyHardeningFunction> AllHardeningFlags{
++  {"format", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-Wformat");
++    flagsAfter.emplace_back("-Wformat-security");
++    flagsAfter.emplace_back("-Werror=format-security");
++  }},
++  {"fortify", [](auto& flagsBefore, auto& flagsAfter, const auto&, auto) {
++    // fortify flags require special handling to avoid clashing with compiler- and user-provided flags.
++    flagsBefore.emplace_back("-O2");
++    flagsBefore.emplace_back("-U_FORTIFY_SOURCE");
++    flagsBefore.emplace_back("-D_FORTIFY_SOURCE=2");
++    flagsAfter.emplace_back("-U_FORTIFY_SOURCE");
++  }},
++  {"fortify3", [](auto& flagsBefore, auto& flagsAfter, const auto&, auto) {
++    // fortify flags require special handling to avoid clashing with compiler- and user-provided flags.
++    flagsBefore.emplace_back("-O2");
++    flagsBefore.emplace_back("-U_FORTIFY_SOURCE");
++    flagsBefore.emplace_back("-D_FORTIFY_SOURCE=3");
++    flagsAfter.emplace_back("-U_FORTIFY_SOURCE");
++  }},
++  {"glibcxxassertions", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-D_GLIBCXX_ASSERTIONS");
++  }},
++  {"libcxxhardeningextensive", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE");
++  }},
++  {"libcxxhardeningfast", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST");
++  }},
++  {"nostrictaliasing", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fno-strict-aliasing");
++  }},
++  {"shadowstack", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fcf-protection=return");
++  }},
++  {"stackclashprotection", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fstack-clash-protection");
++  }},
++  {"strictflexarrays1", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fstrict-flex-arrays=1");
++  }},
++  {"strictflexarrays3", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fstrict-flex-arrays=3");
++  }},
++  {"strictoverflow", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fwrapv");
++  }},
++  {"trivialautovarinit", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-ftrivial-auto-var-init=pattern");
++  }},
++  {"zerocallusedregs", [](auto&, auto& flagsAfter, const auto&, auto) {
++    flagsAfter.emplace_back("-fzero-call-used-regs=used-gpr");
++  }},
++// These require special handling depending on whether or not they’re being passed to `clang` or `clang -cc1`
++// because the parameters are different. CC1 parameters based on how Clang or LLVM interpret the driver parameters.
++  {"pacret", [](auto&, auto& flagsAfter, const auto&, auto isCC1) {
++    if (isCC1) {
++      // Per `ARM::parseBranchProtection` in llvm/lib/TargetParser/ARMTargetParserCommon.cpp
++      // and `CollectARMPACBTIOptions` in clang/lib/Driver/ToolChains/Clang.cpp.
++      flagsAfter.emplace_back("-msign-return-address=non-leaf");
++      flagsAfter.emplace_back("-msign-return-address-key=a_key");
++      flagsAfter.emplace_back("-mbranch-target-enforce");
++    } else {
++      flagsAfter.emplace_back("-mbranch-protection=pac-ret");
++    }
++  }},
++  {"pic", [](auto&, auto& flagsAfter, const auto& triple, auto isCC1) {
++    if (isCC1) {
++      // PIC options depend onthe target.
++      // Per `Clang::ConstructJob` in clang/lib/Driver/ToolChains/Clang.cpp.
++      // and `ParsePICArgs` in clang/lib/Driver/ToolChains/CommonArgs.cpp.
++      flagsAfter.emplace_back("-mrelocation-model");
++      flagsAfter.emplace_back("pic");
++      flagsAfter.emplace_back("-pic-level");
++      flagsAfter.emplace_back("2"); // No platforms we support are anything other than level 2.
++      if (triple.isOSDarwin()) flagsAfter.emplace_back("-pic-is-pie");
++    } else {
++      flagsAfter.emplace_back("-fPIC");
++    }
++  }},
++  {"stackprotector", [](auto&, auto& flagsAfter, const auto&, auto isCC1) {
++    if (isCC1) {
++      // Per `RenderSSPOptions` in clang/lib/Driver/ToolChains/Clang.cpp.
++      flagsAfter.emplace_back("-stack-protector");
++      flagsAfter.emplace_back("2" /* strong */);
++      flagsAfter.emplace_back("-stack-protector-buffer-size");
++      flagsAfter.emplace_back("4");
++    } else {
++      flagsAfter.emplace_back("-fstack-protector-strong");
++      flagsAfter.emplace_back("--param");
++      flagsAfter.emplace_back("ssp-buffer-size=4");
++    }
++  }},
++};
++
++// Since we dynamically determine flags based on the target platform, we have to duplicate these values
++// from Nixpkgs. They were obtained from (for each supported platform by suffix salt):
++//     llvmPackages.stdenv.cc.cc.hardeningUnsupportedFlagsByTargetPlatform stdenv.hostPlatform
++// Exceptions:
++// - `fortify` is unsupported on Linux because it causes ambiguous symbol errors when importing the SwiftGlibc module.
++const std::unordered_map<std::string, std::vector<std::string>> UnsupportedHardeningFlags{
++  {"arm64_apple_darwin",        {"fortify3", "pacret", "shadowstack", "stackclashprotection"}},
++  {"aarch64_unknown_linux_gnu", {"fortify", "shadowstack"}},
++  {"x86_64_unknown_linux_gnu",  {"fortify", "pacret"}},
++};
++
++// The second flag in the pair implies the first.
++constexpr std::array ImpliedFlagPairs{
++  std::pair{"fortify", "fortify3"},
++  std::pair{"strictflexarrays1", "strictflexarrays3"},
++  std::pair{"libcxxhardeningfast", "libcxxhardeningextensive"},
++};
++
++static std::vector<std::string> getNixHardeningVars(const std::string& suffixSalt) {
++  // We don’t know statically what target we are, and we don’t want to do that because
++  // it would require rebuilding Swift depending on the target. Instead, check for the
++  // triple-specific variable and perform the mangling ourselves to check to find which
++  // target variable(s) are also applicable.
++
++  // Example: arm64-apple-darwin
++  // Default hardening flags:
++  // - format
++  // - fortify
++  // - libcxxhardeningfast
++  // - pic
++  // - stackprotector
++  // - strictflexarrays1
++  // - strictoverflow
++  // - zerocallusedregs
++  //
++  // If the user also sets `NIX_HARDENING_ENABLE_arm64_apple_darwin=libcxxhardeningextensive,
++  // the flags returned will be:
++  // - format
++  // - fortify
++  // - libcxxhardeningextensive
++  // - libcxxhardeningfast
++  // - pic
++  // - stackprotector
++  // - strictflexarrays1
++  // - strictoverflow
++  // - zerocallusedregs
++  //
++  // Note that mutually exclusive flags will be sorted out later (meaning `libcxxhardeningfast`)
++  // will be dropped in favor of `libcxxhardeningextensive`.
++
++  std::vector<std::string> result{std::format("{}_{}", NIX_HARDENING_ENABLE_VAR, suffixSalt)};
++
++  const std::array nixCCWrapperVars{
++    std::pair{std::format("{}_BUILD_{}", NIX_CC_WRAPPER_TARGET_VAR, suffixSalt), "_FOR_BUILD"},
++    std::pair{std::format("{}_HOST_{}", NIX_CC_WRAPPER_TARGET_VAR, suffixSalt), ""},
++    std::pair{std::format("{}_TARGET_{}", NIX_CC_WRAPPER_TARGET_VAR, suffixSalt), "_FOR_TARGET"},
++  };
++
++  for (const auto& [wrapperVar, targetSuffix] : nixCCWrapperVars) {
++    if (auto val = Process::GetEnv(wrapperVar.c_str()); val && *val == "1") {
++      result.emplace_back(std::format("{}{}", NIX_HARDENING_ENABLE_VAR, targetSuffix));
++    }
++  }
++
++  return result;
++}
++
++static std::unordered_set<std::string_view> parseFlagsFromString(const std::string& str) {
++  std::unordered_set<std::string_view> result;
++
++  std::string_view unparsed = str;
++  unparsed.remove_prefix(std::min(unparsed.find_first_not_of(" "), unparsed.size()));
++
++  for (std::size_t pos; (pos = unparsed.find(" ")) != std::string_view::npos; ) {
++    std::size_t startPos = unparsed.find_first_not_of(" ");
++    if (startPos < pos) {
++      auto flag = unparsed.substr(startPos, pos);
++      result.emplace(flag);
++    }
++    unparsed.remove_prefix(pos + 1);
++  }
++  if (unparsed.size() > 0) {
++    result.emplace(unparsed);
++  }
++
++  return result;
++}
++
++static std::unordered_set<std::string> getHardeningFlagsForTarget(const std::string& suffixSalt) {
++  std::unordered_set<std::string> result;
++
++  for (auto const& hardeningVar : getNixHardeningVars(suffixSalt)) {
++    if (auto rawFlags = Process::GetEnv(hardeningVar.c_str())) {
++      auto parsedFlags = parseFlagsFromString(*rawFlags);
++      result.insert(begin(parsedFlags), end(parsedFlags));
++    }
++  }
++  
++  return result;
++}
++
++static std::string getSuffixSalt(const llvm::Triple& triple) {
++  // Nixpkgs uses `arm64-apple-darwin` as the triple for Darwin instead of `arm64-apple-macosx<version>`.
++  auto suffixSalt = triple.isOSDarwin() ? triple.getArchName().str() + "-apple-darwin" : triple.getTriple();
++  replace_if(begin(suffixSalt), end(suffixSalt), [](auto& ch){ return ch == '.' || ch == '-'; }, '_');
++  return suffixSalt;
++}
++
++// Based on `cc-wrapper/add-hardening.sh`
++std::pair<std::vector<std::string>, std::vector<std::string>> getClangImporterHardeningFlagsForTarget(const llvm::Triple& triple,
++                                                                                                      bool isCC1) {
++  static std::mutex nixHardeningFlagsCacheMutex;
++  std::lock_guard guard{nixHardeningFlagsCacheMutex};
++
++  std::call_once(NixDebugFlag, []() {
++    int debugLevel = 0;
++    if (auto nixDebugLevel = Process::GetEnv("NIX_DEBUG")) {
++      // Can’t use `std::stoi` because it throws exceptions, which are disabled in the Swift build.
++      debugLevel = std::atoi(nixDebugLevel->c_str());
++    }
++    // Negative debug levels are invalid. Treat them as 0.
++    NixDebugLevel = std::max(0, debugLevel);
++  });
++
++  auto suffixSalt = getSuffixSalt(triple);
++  
++  const auto [flagsIterator, didInsert] = NixHardeningFlagsCache.insert({std::pair{suffixSalt, isCC1}, {}});
++  auto& hardeningFlagsBefore = flagsIterator->second.first;
++  auto& hardeningFlagsAfter = flagsIterator->second.second;
++
++  if (didInsert) {
++    auto hardeningFlags = getHardeningFlagsForTarget(suffixSalt);
++
++    // Set the implied flag explicitly to make filtering unsupported flags easier.
++    for (const auto& [fst, snd] : ImpliedFlagPairs) {
++      if (hardeningFlags.count(snd) != 0) {
++        hardeningFlags.emplace(fst);
++      }
++    }
++    
++    // Remove unsupported flags including ones that imply the flag because they are also not supported.
++    if (auto it = UnsupportedHardeningFlags.find(suffixSalt.c_str()); it != end(UnsupportedHardeningFlags)) {
++      for (const auto& unsupportedFlag : it->second) {
++        if (auto it = hardeningFlags.find(unsupportedFlag); it != end(hardeningFlags)) {
++          hardeningFlags.erase(it);
++        }
++        for (const auto& [fst, snd] : ImpliedFlagPairs) {
++          if (auto it = hardeningFlags.find(snd); unsupportedFlag == fst && it != end(hardeningFlags)) {
++            hardeningFlags.erase(it);
++          }
++        }
++      }
++    }
++    
++    // Make the pair mutually exclusive because the second implies the first.
++    for (const auto& [fst, snd] : ImpliedFlagPairs) {
++      if (auto it = hardeningFlags.find(fst); hardeningFlags.count(snd) != 0 && it != end(hardeningFlags)) {
++        hardeningFlags.erase(it);
++      }
++    }
++    
++    if (NixDebugLevel >= 1) {
++      std::unordered_set<std::string> disabledFlags;
++      for (const auto& [flag, _ignored] : AllHardeningFlags) {
++        if (hardeningFlags.count(flag) == 0) {
++          disabledFlags.emplace(flag);
++        }
++      }
++
++      std::cerr << "HARDENING: disabled flags:";
++      for (const auto& disabledFlag : disabledFlags) {
++        std::cerr << " " << disabledFlag;
++      }
++      std::cerr << std::endl;
++      
++      std::cerr << "HARDENING: Is active (not completely disabled with \"all\" flag)" << std::endl;
++    }
++
++    for (const auto& flag : hardeningFlags) {
++      if (auto it = AllHardeningFlags.find(flag); it != end(AllHardeningFlags)) {
++        if (NixDebugLevel >= 1) {
++          std::cerr << "HARDENING: enabling " << flag << std::endl;
++        }
++        it->second(hardeningFlagsBefore, hardeningFlagsAfter, triple, isCC1);
++      }
++    }
++  }
++
++  return {hardeningFlagsBefore, hardeningFlagsAfter};
++}
