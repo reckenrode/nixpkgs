@@ -539,6 +539,13 @@ stdenv.mkDerivation (
         (lib.cmakeBool "LLVM_ENABLE_TERMINFO" enableTerminfo)
         (lib.cmakeBool "LLVM_INCLUDE_TESTS" finalAttrs.finalPackage.doCheck)
       ]
+      # Older versions of LLVM use extensions that are flagged by Clang 22 and newer, resulting in an error.
+      # See: https://clang.llvm.org/docs/DiagnosticsReference.html#wc2y-extensions
+      ++ optionals (
+        stdenv.cc.isClang
+        && lib.versionAtLeast (lib.getVersion stdenv.cc) "22"
+        && lib.versionOlder finalAttrs.version "21"
+      ) [ (lib.cmakeFeature "CMAKE_CXX_FLAGS" "-Wno-error=c2y-extensions") ]
       ++ optionals stdenv.hostPlatform.isStatic [
         # Disables building of shared libs, -fPIC is still injected by cc-wrapper
         (lib.cmakeBool "LLVM_ENABLE_PIC" false)

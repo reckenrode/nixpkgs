@@ -142,17 +142,26 @@ let
               old:
               # Don’t apply the following changes when manpages are built,
               # which nulls out these attrs and sets `doCheck` to false.
-              lib.optionalAttrs (old.pname != "llvm-manpages") {
-                patches = (old.patches or [ ]) ++ [
-                  # Ensure the LLVM module cache is in a writable location during builds.
-                  ./patches/llvm/module-cache.patch
-                ];
-                doCheck = false; # TODO: fix fork-specific tests that fail due to, e.g., not finding `libLLVM.dylib` during the test
-                # Swift relies on LLVM’s private `config.h` for feature checks (e.g., for `unistd.h`).
-                postInstall = (old.postInstall or "") + ''
-                  cp include/llvm/Config/config.h "$dev/include/llvm/Config/config.h"
-                '';
-              }
+              lib.optionalAttrs (old.pname != "llvm-manpages") (
+                {
+                  patches = (old.patches or [ ]) ++ [
+                    # Ensure the LLVM module cache is in a writable location during builds.
+                    ./patches/llvm/module-cache.patch
+                  ];
+                  doCheck = false; # TODO: fix fork-specific tests that fail due to, e.g., not finding `libLLVM.dylib` during the test
+                  # Swift relies on LLVM’s private `config.h` for feature checks (e.g., for `unistd.h`).
+                  postInstall = (old.postInstall or "") + ''
+                    cp include/llvm/Config/config.h "$dev/include/llvm/Config/config.h"
+                  '';
+                }
+                // lib.optionalAttrs (lib.versionAtLeast (lib.getVersion stdenv.cc) "22") {
+                  cmakeFlags = (old.cmakeFlags or [ ]) ++ [
+                    # Using certain extensions with Clang 22 and newer results in an error. Suppress the error.
+                    # See: https://clang.llvm.org/docs/DiagnosticsReference.html#wc2y-extensions
+                    (lib.cmakeFeature "CMAKE_CXX_FLAGS" "-Wno-error=c2y-extensions")
+                  ];
+                }
+              )
             );
 
           lld = prev.lld.overrideAttrs (old: {
