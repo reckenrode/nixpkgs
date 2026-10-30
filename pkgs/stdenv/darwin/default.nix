@@ -598,6 +598,7 @@ assert bootstrapTools.passthru.isFromBootstrapFiles or false; # sanity check
           withExpat = false;
           withGdbm = false;
           withMpdecimal = false;
+          withSqlite = false;
           withZstd = false;
           # These features aren’t needed. Omitting them further reduces the number of paths built in the bootstrap.
           includeSiteCustomize = false;
