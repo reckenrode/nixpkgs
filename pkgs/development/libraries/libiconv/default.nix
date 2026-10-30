@@ -22,6 +22,11 @@ stdenv'.mkDerivation (finalAttrs: {
   pname = "libiconv";
   version = "1.19";
 
+  outputs = [
+    "out"
+    "dev"
+  ];
+
   src = fetchurl {
     url = "mirror://gnu/libiconv/libiconv-${finalAttrs.version}.tar.gz";
     hash = "sha256-iN2WqMBGTsoUT8eRrmDNMc2O54Mh5nOX4l/AlcShmqY=";
