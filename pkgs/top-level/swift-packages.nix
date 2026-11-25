@@ -71,6 +71,15 @@ in
 }:
 
 let
+  # swift-toolchain is deliberately omitted from the Swift package set to prevent its use inside Nixpkgs.
+  # It is intended for end users to have a complete toolchain similar to what they could download from swift.org.
+  # Packages in Nixpkgs should use the `swift` compiler and `swiftpm` or other build system packages as needed.
+  autoCalledPackages' =
+    if config.allowAliases then
+      autoCalledPackages
+    else
+      lib.removeAttrs autoCalledPackages [ "swift-toolchain" ];
+
   # Swift requires three bootstrap stages:
   # - Stage 0 builds a minimal Swift compiler using only C++.
   # - Stage 1 builds a Swift compiler using the stage 0 Swift compiler. Features needed to build macros are enabled.
@@ -260,7 +269,7 @@ makeScopeWithSplicing' {
         enableSourceKitLSP = false;
       };
     };
-  f = lib.extends autoCalledPackages (
+  f = lib.extends autoCalledPackages' (
     self:
     let
       # Can’t be defined in `by-name` because it’s a function.
