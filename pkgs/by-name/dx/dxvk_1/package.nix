@@ -29,15 +29,15 @@ stdenv.mkDerivation (finalAttrs: {
       hash = "sha256-tTAsQOMAazgH/6laLNTuG2lki257VUR9EBivnD4vCuY=";
     })
     # Fixes errors building with GCC 14.
-    ./gcc14-compat.patch
+    ./patches/0001-gcc14-compat.patch
   ]
   ++ lib.optionals enableMoltenVKCompat [
-    # Patch DXVK to work with MoltenVK even though it doesn’t support some required features.
-    # Some games work poorly (particularly Unreal Engine 4 games), but others work pretty well.
-    ./darwin-dxvk-compat.patch
     # Use synchronization primitives from the C++ standard library to avoid deadlocks on Darwin.
     # See: https://www.reddit.com/r/macgaming/comments/t8liua/comment/hzsuce9/
-    ./darwin-thread-primitives.patch
+    ./patches/0002-darwin-thread-primitives.patch
+    # Patch DXVK to work with MoltenVK even though it doesn’t support some required features.
+    # Some games work poorly (particularly Unreal Engine 4 games), but others work pretty well.
+    ./patches/0003-darwin-dxvk-compat.patch
   ];
 
   strictDeps = true;

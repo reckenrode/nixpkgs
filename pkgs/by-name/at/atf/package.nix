@@ -3,7 +3,6 @@
   stdenv,
   darwin,
   fetchFromGitHub,
-  fetchpatch,
   autoreconfHook,
   kyua,
   gitUpdater,
@@ -15,13 +14,13 @@ let
 in
 stdenv'.mkDerivation (finalAttrs: {
   pname = "atf";
-  version = "0.23";
+  version = "0.26.1";
 
   src = fetchFromGitHub {
     owner = "freebsd";
     repo = "atf";
     tag = "atf-${finalAttrs.version}";
-    hash = "sha256-g9cXeiCaiyGQXtg6eyrbRQpqk4VLGSFuhfPB+ynbDIo=";
+    hash = "sha256-YdxmkrJIQpOd48RSgQwPgLD76KzKFONc5vlqOaNKIcU=";
   };
 
   postPatch =
@@ -58,11 +57,6 @@ stdenv'.mkDerivation (finalAttrs: {
     ];
 
   enableParallelBuilding = true;
-
-  makeFlags = [
-    # ATF isn’t compatible with C++17, which is the default on current clang and GCC.
-    "CXXFLAGS=-std=c++14"
-  ];
 
   doInstallCheck = true;
 

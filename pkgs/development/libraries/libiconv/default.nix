@@ -2,38 +2,69 @@
   fetchurl,
   stdenv,
   lib,
+  darwin,
+  gperf,
   updateAutotoolsGnuConfigScriptsHook,
   enableStatic ? stdenv.hostPlatform.isStatic,
   enableShared ? !stdenv.hostPlatform.isStatic,
-  enableDarwinABICompat ? false,
+  enableDarwinABICompat ? stdenv.hostPlatform.isDarwin,
 }:
 
 # assert !stdenv.hostPlatform.isLinux || stdenv.hostPlatform != stdenv.buildPlatform; # TODO: improve on cross
 
-stdenv.mkDerivation (finalAttrs: {
+let
+  # libiconv is propagated by the SDK in the stdenv. Avoid an infinite recursion by using a stdenv
+  # with an SDK that does not try to propagate it.
+  stdenv' = if stdenv.hostPlatform.isDarwin then darwin.bootstrapStdenv else stdenv;
+in
+
+stdenv'.mkDerivation (finalAttrs: {
   pname = "libiconv";
   version = "1.19";
+
+  outputs = [
+    "out"
+    "dev"
+  ];
 
   src = fetchurl {
     url = "mirror://gnu/libiconv/libiconv-${finalAttrs.version}.tar.gz";
     hash = "sha256-iN2WqMBGTsoUT8eRrmDNMc2O54Mh5nOX4l/AlcShmqY=";
   };
 
+  patches = [
+    # Add support for the UTF-8-MAC encoding. This is needed for correct behavior of applications that interact with
+    # the filesystem on Darwin because it uses a variant of NFD to store filenames.
+    (fetchurl {
+      url = "https://raw.githubusercontent.com/macports/macports-ports/ce1083dbec406fcea0f2678308ae85639798aa6e/textproc/libiconv/files/patch-utf8mac.diff";
+      hash = "sha256-aqoTDIunKnWLHPizdWbU6eCDZXaj2s+GJwtg6Spzfio=";
+    })
+  ];
+
+  # The patch for UTF-8-MAC requires -p0. It can’t use `fetchpatch2` because that results in an infinite recursion.
+  patchFlags = [ "-p0" ];
+
   enableParallelBuilding = true;
 
   # necessary to build on FreeBSD native pending inclusion of
   # https://git.savannah.gnu.org/cgit/config.git/commit/?id=e4786449e1c26716e3f9ea182caf472e4dbc96e0
-  nativeBuildInputs = [ updateAutotoolsGnuConfigScriptsHook ];
+  nativeBuildInputs = [
+    updateAutotoolsGnuConfigScriptsHook
+  ]
+  # Darwin’s UTF-8-MAC patch requires `aliases.h` to be regenerated, which requires gperf.
+  ++ lib.optionals enableDarwinABICompat [ gperf ];
 
   strictDeps = true;
 
   # https://github.com/NixOS/nixpkgs/pull/192630#discussion_r978985593
   hardeningDisable = lib.optional (stdenv.hostPlatform.libc == "bionic") "fortify";
 
-  setupHooks = [
-    ../../../build-support/setup-hooks/role.bash
-    ./setup-hook.sh
-  ];
+  setupHooks =
+    # Match the default behavior on Darwin, which does not automatically link libiconv.
+    lib.optionals (!enableDarwinABICompat) [
+      ../../../build-support/setup-hooks/role.bash
+      ./setup-hook.sh
+    ];
 
   postPatch =
     lib.optionalString
@@ -83,6 +114,13 @@ stdenv.mkDerivation (finalAttrs: {
   # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114870.
   # remove after gnulib is updated
   ++ lib.optional stdenv.hostPlatform.isCygwin "gl_cv_clean_version_stddef=yes";
+
+  preBuild =
+    # The UTF-8-MAC patch requires regenerating `flags.h` and `aliases.h`
+    lib.optionalString enableDarwinABICompat ''
+      rm -f lib/{aliases,flags,canonical,canonical_local}.h
+      make -f Makefile.devel lib/{aliases,flags,canonical,canonical_local}.h
+    '';
 
   passthru = { inherit (finalAttrs) setupHooks; };
 
